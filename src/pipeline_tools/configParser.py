@@ -1,5 +1,7 @@
 #!/usr/bin/env python3 
 
+from sys import argv
+
 def getConfigDict(configFilePath):
     f = open(configFilePath, "rt")
     configDict = {}
@@ -11,4 +13,3 @@ def getConfigDict(configFilePath):
             configDict[configList[0]] = " ".join(configList[1:]) # The first value is the key name and the value is all the rest. Here you can add the specific commands to use etc. 
     f.close()
     return configDict
-            

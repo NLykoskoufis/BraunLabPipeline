@@ -11,86 +11,69 @@
 contact_email,nikolaos.lykoskoufis@unige.ch 
 
 
+#### NEEDED FILES PATH #####
 
-
+reference_genome, 
 
 
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
 pairend,1
 
-#Information about lane to process
-lanes,1,2,3,4,5,6,7,8
+#Trim reads using cutadapt
+#Example of how a cutadapt commands looks like 
+#cutadapt -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 -o testFile_R1_001.trim.fastq.gz -p testFile_R2_001.trim.fastq.gz testFile_R1_001.fastq.gz testFile_R2_001.fastq.gz
+#If you want to modify the parameters used, you can comment the line below, and add what you want. 
+trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 
 
-#Options for demultiplexing (check Illumina CASAVA documentation for more information): 
-#Number of mismatches allowed in indexe for demultiplexing (0 or 1)
-mismatches,1
+#Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
+mapper,bowtie2
 
-#Mask: Y50 I6n y50 --> Read it this way: Y50 'Y' mean first read, 50 give the size: I7 'I' mean index, 6 give the size and n signify that one base is not used: y50 'y' mean second read, 50 give the size
-#This option can be useful to specify wich part of the sequences should be used during the demultiplexing
-qseq-mask,y50 I6 y50
+#Choose parameters for mapping using bowtie2
+#Example of how a bowtie command looks like 
+#bowtie2 -p 8 -x $mm10 --maxins 2000 -N 1 -1 testFile_R1_001.trim.fastq.gz -2 testFile_R2_001.trim.fastq.gz -S testFile.sam                                                         
+bowtie_parameters, -p 8 -x $mm10 --maxins 2000 -N 1
 
-#reference genome used to map reads (could be a directory path for STAR or the index file prefix for GEM, BWA or bowtie)
-ref_genome_name,/data/unige/funpopgen/2backup/common/data/indexes/gem_indexes/hg19_chr_only_and_herpes_index/hg19_chr_only_and_herpes.gem
+#Filter and sort BAM
+#samtools view -h ${file}.bam  | grep -v chrM | samtools view -b -h -F 4 -q 20 | samtools sort -O BAM -T ${file} > testFile.QualTrimNoMt.bam
+filter_bam, -b -h -F 4 -q 20 
 
-#Choose your mapper (possible options: bwa, bowtie, GEM, STAR)
-mapper,STAR
 
-#Modify the BWA options. 
-#bwa aln,               #modify bwa option for alignement. Default options: "-t 6"
-#bwa sampe,-a,500000    #mendatory if you want to map pairend-end. If you want to modify the options put something after the ",". Default options: none
-#bwa samse,-a,500000    #mendatory if you want to map single-end. If you want to modify the options put something after the ",". Default options: none
 
-#Modify the bowtie options. Default options: "-S -p 8"
-#bowtie,
+#PCR duplicates. This is step XX. If you have selected it, the following command will be executed. No parameters or anything to add here. This command does not change.
+#Example: java -Xmx8g -jar $PICARD MarkDuplicates I=${file}.QualTrimNoMt.bam O=${file}.QualTrimNoMt.Picard.bam M=${file}.metrix
 
-#Modify the GEM options. The default options: "rna-pipeline -t 8 -q 33 --direct-input --compact"
-#GEMoption,-q 33,-t 6,--direct-input,--compact,--no-stats,--no-filtered,--no-count
+#Filter duplicates.
+#Example: samtools view -b -h -F 1792 testFile.QualTrimNoMt.Picard.bam > testFile.NoDup.bam
+ 
+PCR_duplicates_removal, view -b -h -F 1792
 
-#Modify the STAR options. The default ones are "--readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMattributes All". --outSAMmultNmax 1 will output only 1 alignment per read and report the number of hits with the tag NH:i:x but the mapping position of these multiple hits will not be reported. If you remove the "--outSAMmultNmax 1" option then some stats reported by the pipeline will be wrong (such as the number of reads). --outSAMattributes All will output all tags. There was a problem with the previous version of the pipeline. STAR by default does not output NM which was a problem since this tag is NEEDED for the proper filtering of the number of mismatches when running quantifications.
-STARoption,--readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMunmapped Within --outSAMattributes All
+#Deeptools to create normalized .bw files 
+bamCoverage, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
 
-#Maximum read length in fastq (Mendatory line for star. Will set the --sjdbOverhang option to STARreadLength - 1)
-STARreadLength,50
+#Bam2Bed Convert bam 2 bed file. 1--> YES; 0--> NO
+bam2bed, 1
 
-#If uncommented keep all GEM results in a directory in destination/bam/gem
-#keep_all_GEM
-#If uncommented keep all STAR results destination/bam/star
-keep_all_STAR
+#Extend reads. Default extension is 150 but you can change the value. This step runs a bash script to extend reads.
+extend_reads, 150
 
-#Set mapping bsub option, if you modify this make sur you allocat correctly enough nodes, memory so nothing crash on vital-it.
-#WARNING : values set as example are not good to use, If you are not sure please leave this options commented and good default values will be used by the pipeline.
-# Default for GEM: -q normal -M 70000000 -R "span[hosts=1]" -R "rusage[mem=70000]" -n8
-# Default for STAR: -q normal -M 60000000 -R "span[hosts=1]" -R "rusage[mem=60000]" -n 8
-# Default for BWA: -q normal -M 5000000 -R "rusage[mem=5000]" -n 6
-# Default for Bowtie: -q normal -M 20000000 -R "rusage[mem=15000]" -n 8
-#mapping_bsub_option,-M 60000000 -R rusage[mem=60000] -R span[hosts=1] -n 16 -q normal
+#Peak calling with MACS2
+#Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
+MACS2, --format BED --nomodel -g mm -B 
 
-#Annotation file use for exon quantification
-quantification_annotation,/data/unige/funpopgen/2backup/common/data/annotation/gencode_v26/gencode.v26.annotation.filtered.gtf
-
-#Annotation files use by GEM for transcriptom mapping
-#GEM_annotation,/data/unige/funpopgen/2backup/common/data/indexes/gem_indexes/transcriptome_gencode.v19_index/gencode.v19.annotation.gtf
-
-#Annotation files use by STAR for transcripto
-STAR_annotation,/data/unige/funpopgen/2backup/common/data/annotation/gencode_v26/gencode.v26.annotation.filtered.gtf
-
-#Give a mapping quality score threshold to select mapped reads for the quantification step only (if not set quality_score_threshold = 10. We usually use, 10 for BWA, 150 for GEM and 255 for STAR)
-quality_score_threshold,255
-
-#Annotation, mismatches threshold for reads, check NM:i: flag in bam file. Usefull only for the quantification step. Will allow NM_threshold in the read for single end or in both reads together for paired-ends
-NM_threshold,8
-
-#required option for qc_fastq
-qc_fastq,all
-
-#Run annotation (used only with task 1 and 3)
-run_annotation,1
-
-#Draw graphs for fastq qc (0=no, 1=yes)
-fastq_qc_graphs,1
+#Perform fastq QC using FastQC (0=no, 1=yes)
+fastq_qc,1
 
 ##Draw graphs for mapping qc (0=no, 1=yes)
 mapping_qc_graphs,1
+
+
+#######################################################################################################
+#                                         SLURM SUBMIT                                                #
+#######################################################################################################
+slurm_trim, --time=04:00:00 --mem=10G --partition=shared-cpu
+slurm_mapping, --time=12:00:00 --mem=60G --partition=shared-cpu -n 1 -N 1 -c 8
+slurm_peakCalling, --time=12:00:00 --mem=20G --partition-shared-cpu
+slurm_general, --time=12:00:00 --mem=20G --partition=shared-cpu
 
 #######################################################################################################
 #                                         SOFTWARE PATH                                               #
@@ -100,41 +83,23 @@ mapping_qc_graphs,1
 #the comma is the path to the corresponding executable.
 
 #path to python 3.2
-python,/home/ipadiole/bin/python3.2
+python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
 
-#Path to setupBclToFastq
-setupBclToFastq,/software/UHTS/Analysis/bcl2fastq/2.19.0/bin/bcl2fastq
+#Path to cutadapt
+cutadapt,/home/users/l/lykoskou/.local/bin/cutadapt
 
-#Path to bwa
-bwa,/data/unige/funpopgen/2backup/common/tools/src/bwa/bwa-0.7.10/bwa-0.7.10/bwa
-
-#Path to bowtie
-bowtie_dir,/mnt/common/UHTS/beta/Linux/x86_64/Bowtie/bowtie-0.12.7/bowtie
-
-#Path to GEM
-gem,/home/npanousi/src/gemtools-1.7.1-core2/bin/gemtools
+#Path to bowtie2
+bowtie2,/home/users/l/lykoskou/Software/bowtie2-2.4.4/bowtie2
 
 #Path to STAR
-star,/software/UHTS/Aligner/STAR/2.5.3a/bin/STAR
+#star,/srv/beegfs/scratch/groups/funpopgen/Tools/STAR-2.7.5c/bin/Linux_x86_64_static/STAR
 
 #Path to samtools
-samtools,/software/UHTS/Analysis/samtools/1.3/bin/samtools
-
-#bamToFastq
-bamToFastq,/data/unige/funpopgen/2backup/common/tools/src/Hydra-Version-0.5.3/bin/bamToFastq
+samtools,/home/users/l/lykoskou/Software/samtools-1.12/samtools
 
 #Rscript
-Rscript,/software/R/3.4.2/bin/Rscript
+Rscript,/opt/ebsofts/R/3.6.2-foss-2019b/bin/Rscript
 
-#Quantification script (use QTLtools or the old script: samtoexoncoverage_gencode.pl)
-Quantification,/data/unige/funpopgen/chowald/scripts/tools/softwares/QTLtools/QTLtools-master_03.10.2017/qtltools/bin/QTLtools
 
-#### NEEED TO UPDATE QTLTOOLS VERSION.
-
-#Quantification,/data/unige/funpopgen/2backup/common/tools/src/RNAseq_pipeline_v4/pipeline/RNAseq_pipeline_v4/trunk/dquantification/samtoexoncoverage_gencode.pl
-
-#######################################################################
-#                             BACKUP PATH                             #
-#######################################################################
-#Directory where an archive containing fastq and bam will be copied
-backup_root,/data/unige/funpopgen/2backup/common/data/sequencing_data/
+#WSBATCH
+wsbatch,/srv/beegfs/scratch/groups/funpopgen/bin/wsbatch

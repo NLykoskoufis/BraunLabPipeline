@@ -30,6 +30,3 @@ def writeEmail(addresses, subject, msg):
         smtpObj.quit()
     except smtplib.SMTPException:
         stderr.write('Error, unable to send mail')
-
-
-writeEmail(['nikolaos.lykoskoufis@unige.ch'],"Test", "This is a test")
