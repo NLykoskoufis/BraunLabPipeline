@@ -1,0 +1,8 @@
+#[2021-07-08 01:17:37 PM]
+cd src
+#[2021-07-08 01:17:37 PM]
+lh
+#[2021-07-08 01:17:41 PM]
+python3 pipeline_tools/writeEmail.py
+#[2021-07-08 01:17:47 PM]
+less pipeline_tools/writeEmail.py
