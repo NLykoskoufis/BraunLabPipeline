@@ -17,6 +17,8 @@ from writeEmail import writeEmail
 from configParser import getConfigDict
 from fastqTools import getFastqPrefix
 from slurmTools import catchJID
+from dirCheck import * 
+from submitSteps import *
 
 # ===========================================================================================================
 DESC_COMMENT = "ATACseq pipeline"
@@ -59,15 +61,19 @@ if len(sys.argv) > 1:
         print('Pipeline version 1.00\n')
         sys.exit(0)
 
-parser.add_argument('-fastq', '-fastqdir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
-parser.add_argument('-bam', '-bamdir', dest='bam_dir', type=str, help='Path bam diretory, is multiple, separate with space.')
-parser.add_argument('-sortedBam', dest='sorted_bam_dir', type=str, help='Path to sorted bam directory, if not set, first bam directory is used.')
-parser.add_argument('-eqd', '-quantification_dir', dest='eq_dir', type=str, help='Absolut path peak calling diretory')
-parser.add_argument('-od', '-outputdir', dest='output_dir', type=str, help='Path to output directory')
-parser.add_argument('-cf', dest='config_file_path', required=True,type=str, help='Name of your configuration file: project_run_config_V1')
-parser.add_argument('-tf', dest='tar_fastq', action='store_true', help='True if you want to do a backup of fastq files. \'-rn\' and \'-pn\' options are mandatory to do a backup.')
-parser.add_argument('-tb', dest='tar_bam', action='store_true', help='True if you want to do a backup of bam files. \'-rn\' and \'-pn\' options are mandatory to do a backup.')
-parser.add_argument('-t', dest='task', type=str, required=True, nargs='+', help='')
+parser.add_argument('-raw', '--raw-dir', dest='raw_dir',required=True, type=str, help='Absolute path to the raw directory')
+parser.add_argument('-fastq', '--fast-qdir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
+parser.add_argument('-trimfastq', '--trim-fastq-dir', dest='trimmed_fastq_dir', type=str, help='Absolut path trimmed fastq to diretor(y)ies. If multiple directories, separate eache path with space')
+parser.add_argument('-bam', '--bam-dir', dest='bam_dir', type=str, help='Path bam diretory, is multiple, separate with space.')
+parser.add_argument('-sortedBam','--sorted-bam-dir', dest='sorted_bam_dir', type=str, help='Path to sorted bam directory, if not set, first bam directory is used.')
+parser.add_argument('-eqd','--quant-dir', '-quantification_dir', dest='eq_dir', type=str, help='Absolut path peak calling diretory')
+parser.add_argument('-bed', '--bed-dir', dest='bed_dir', type=str, help='Absolut path of where to save/read bed files')
+parser.add_argument('-bw', '--bigwig-dir', dest='bigwig_dir', type=str, help='Absolut path peak calling diretory')
+parser.add_argument('-od', '--output-dir', dest='output_dir', type=str, help='Path to output directory. Use it only if you do not run the pipeline from step')
+parser.add_argument('-cf','--configuration-file', dest='config_file_path', required=True,type=str, help='Name of your configuration file: project_run_config_V1')
+#parser.add_argument('-tf', dest='tar_fastq', action='store_true', help='True if you want to do a backup of fastq files. \'-rn\' and \'-pn\' options are mandatory to do a backup.')
+#parser.add_argument('-tb', dest='tar_bam', action='store_true', help='True if you want to do a backup of bam files. \'-rn\' and \'-pn\' options are mandatory to do a backup.')
+parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
 
 ####################
 #    CHECK ARGS    #
@@ -76,12 +82,6 @@ parser.add_argument('-t', dest='task', type=str, required=True, nargs='+', help=
 #Get command line args
 args = parser.parse_args()
 
-####### STEP 1 ########
-# Initialize pipeline and check which steps should be ran.
-
-
-#Get command line args
-args = parser.parse_args()
 
 #get list of tasks
 if not args.task:
@@ -90,7 +90,7 @@ if not args.task:
 task_list = args.task
 if 'all' in task_list:
     task_list = ['1','2','3','4','5','6','7','8','9','10']
-    
+
 if not args.config_file_path:
     sys.stderr.write('ERROR: You must provide a configuration file to run the pipeline : arg -cf\n')
     sys.exit(1)
@@ -99,19 +99,204 @@ elif not os.path.exists(args.config_file_path):
     sys.exit(1)
 else:
     configFileDict = getConfigDict(args.config_file_path) # Create dictionay containing all important information for the pipeline to work. 
-     
+
+if not args.raw_dir: 
+    raise TypeError("ERROR. You need to specify a raw directory for the pipeline to work")
+else: 
+    configFileDict['raw_dir'] = args.raw_dir
+
+if args.raw_dir and not args.output_dir: 
+    print("The raw directory is also the output directory")
+if args.raw_dir and args.output_dir: 
+    print("Results will be written in the output directory specified and not the raw directory")
+
+if args.raw_dir == args.output_dir:
+    raise TypeError("ERROR. The raw directory and output directories are the same. Either specify a different output directory than the raw directory or do not specify at all.")
+
 #Create unique ID for the run
 configFileDict["uid"] = (str(uuid.uuid1())[:8])
 
 # Add extra information to the dictionary
 configFileDict["pipeline_path"] = pipeline_path
-configFileDict["raw_dir"] = args.output_dir
-configFileDict["bam_dir"] = args.bam_dir
-configFileDict["fastq_dir"] = args.fastq_dir
-configFileDict["quantification_dir"] = args.eq_dir
 
- 
+### WHICH STEPS ARE GOING TO BE RAN AND CHECK WHETHER ALL DIRECTORIES WERE GIVEN 
+configFileDict['task_list'] = task_list 
 
+
+# ===========================================================================================================
+STEP1 = "CHECKING STEPS AND ADDING DIRECTORIES IN DICTIONARY AND CREATING THEM"
+# ===========================================================================================================
+
+if '1' in task_list: 
+    if not args.fastq_dir:
+        raise TypeError("ERROR. you need to specify a fastq directory.")
+    else: 
+        configFileDict['fastq_dir'] = args.fastq_dir 
+    
+    if args.output_dir:
+        print("You specified an output directory.")
+        configFileDict['trimmed_fastq_dir'] = f"{args.output_dir}/trimmed_fastq_dir"
+    else: 
+        configFileDict['trimmed_fastq_dir'] = f"{args.raw_dir}/trimmed_fastq"
+    if checkDir(configFileDict['trimmed_fastq_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['trimmed_fastq_dir'])
+        createLog(configFileDict['trimmed_fastq_dir'])
+    
+    
+    
+if '2' in task_list:
+    # Arguments required here are -cf -raw -fastq -od
+    if not args.fastq_dir: 
+        raise TypeError("ERROR. You need to specify a fastq directory")
+    else:
+        configFileDict['fastq_dir'] = args.fastq_dir 
+    
+    if args.output_dir:
+        print("You specified an output directory. The mapped bam files will be saved in the specified directory and the mapper will not automatically create a bam directory under the raw directory specified")
+        configFileDict['bam_dir'] = f"{args.output_dir}/bam"
+    else: 
+        configFileDict['bam_dir'] = f"{args.raw_dir}/bam"
+    if checkDir(configFileDict['bam_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['bam_dir'])
+        createLog(configFileDict['bam_dir'])
+        
+if '3' in task_list: ### PCR DUPLICATES MARK
+    if '2' not in task_list: 
+        if not args.bam_dir: 
+            raise TypeError("ERROR. You need to specify a bam directory")
+        else:
+            configFileDict['bam_dir'] = args.bam_dir
+    
+    if args.output_dir: 
+        print("You specified an output directory. The pipeline will therefore not create one.")
+        configFileDict['marked_bam_dir'] = f"{args.output_dir}/marked_bam"
+    else: 
+        configFileDict['marked_bam_dir'] = f"{args.raw_dir}/marked_bam"
+    if checkDir(configFileDict['marked_bam_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['marked_bam_dir'])
+        createLog(configFileDict['marked_bam_dir'])
+    
+    
+    
+            
+if '4' in task_list: ### FILTER/SORT/INDEX BAM FILES
+    if '3' not in task_list:
+        if not args.bam_dir: 
+            raise TypeError("ERROR. You need to specify a bam directory")
+        else: 
+            configFileDict['bam_dir'] = args.bam_dir 
+    
+    if args.output_dir: 
+        print("You specified an output directory. The pipeline will therefore not create one.")
+        configFileDict['sorted_bam_dir'] = f"{args.output_dir}/sorted_bam"
+    else: 
+        configFileDict['sorted_bam_dir'] = f"{args.raw_dir}/sorted_bam"
+    if checkDir(configFileDict['sorted_bam_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['sorted_bam_dir'])
+        createLog(configFileDict['sorted_bam_dir'])    
+
+if '5' in task_list: ## CREATE BIGWIG
+    if '4' not in task_list: 
+        if not args.bam_dir: 
+            raise TypeError("You need to specify a bam directory.")
+        else: 
+            configFileDict['bam_dir'] = args.bam_dir 
+    
+    if args.output_dir: 
+        print("You specified an output directory. The pipeline will therefore not create one.")
+        configFileDict['bw_dir'] = f"{args.output_dir}/bigwig"
+    else: 
+        configFileDict['bw_dir'] = f"{args.raw_dir}/bigwig"
+    if checkDir(configFileDict['bw_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['bw_dir'])
+        createLog(configFileDict['bw_dir']) 
+        
+if '6' in task_list: #### BAM 2 BED 
+    if '4' not in task_list: 
+        if not args.bam_dir: 
+             raise TypeError("You need to specify a bam directory.")
+        else: 
+            configFileDict['bam_dir'] = args.bam_dir
+    
+    if args.output_dir: 
+        print("You specified an output directory. The pipeline will therefore not create one.")
+        configFileDict['bed_dir'] = f"{args.output_dir}/bed"
+    else: 
+        configFileDict['bed_dir'] = f"{args.raw_dir}/bed"
+    if checkDir(configFileDict['bed_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['bed_dir'])
+        createLog(configFileDict['bed_dir']) 
+    
+        
+if '7' in task_list: 
+    if '6' not in task_list: 
+        if not args.bed_dir: 
+            raise TypeError("You need to specify a bed directory")
+        else: 
+            configFileDict['bed_dir'] = args.bed_dir 
+    
+    if args.output_dir: 
+        print("You specified an output directory. The pipeline will therefore not create one.")
+        configFileDict['extended_bed_dir'] = f"{args.output_dir}/extended_bed"
+    else: 
+        configFileDict['extended_bed_dir'] = f"{args.raw_dir}/extended_bed"
+    if checkDir(configFileDict['extended_bed_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['extended_bed_dir'])
+        createLog(configFileDict['extended_bed_dir'])
+        
+if '8' in task_list:
+    if configFileDict['technology'] == "ATACseq": 
+        if '7' not in task_list: 
+            if not args.bed_dir: 
+                raise TypeError("You need to specify a bed directory")
+            else: 
+                configFileDict['bed_dir'] = args.bed_dir
+        if args.output_dir: 
+            print("You specified an output directory. The pipeline will therefore not create one.")
+            configFileDict['peaks_dir'] = f"{args.output_dir}/peaks"
+        else: 
+            configFileDict['peaks_dir'] = f"{args.raw_dir}/peaks"
+        if checkDir(configFileDict['peaks_dir']): 
+            raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['peaks_dir'])
+        createLog(configFileDict['peaks_dir'])
+
+
+
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
+         
+        
 
 
 
@@ -130,107 +315,153 @@ STEP1 = "Trimming reads"
 
 if '1' in task_list: 
     print("Running trimming of reads.\n")
-    if not os.path.isdir(args.fastq_dir): 
-        sys.stder("ERROR. The fastq directory does not exist.")
+    
+    if not args.fastq_dir: 
+        sys.stderr("ERROR. You need to specify a fastq directory using -fastq/-fastqdir")
     else: 
-        trimmed_fastq_dir = f"{args.output_dir}/trimmed_fastq"
-        configFileDict['trimmed_fastq_dir'] = trimmed_fastq_dir 
-        if os.path.isdir(trimmed_fastq_dir):
-            sys.stderr("ERROR. The directory already exists! Exiting to avoid overwriting files")
-        else: 
-            os.mkdir(trimmed_fastq_dir)
-            os.mkdir(f"{trimmed_fastq_dir}/log")
-            
-            # Create list with JOBIDs of trimming. This is important because it allows for the rest of the submitted jobs to wait for this. 
-            TRIM_JID_LIST = []
-            FASTQ_FILES = getFastqPrefix(args.fastq_dir)
-            for file in FASTQ_FILES:
-                TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}_R1_001.trim.fastq.gz -p {trimmed_dir}/{file}_R2_001.trim.fastq.gz {fastq_dir}/{file}_R1_001.fastq.gz {fastq_dir}/{file}_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = trimmed_fastq_dir, fastq_dir=args.fastq_dir)
-                SLURM_CMD = "{wsbatch} {slurm} -o {trimmed_log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_trim"], trimmed_log_dir = f"{trimmed_fastq_dir}/log", uid = configFileDict["uid"], cmd = TRIM_CMD)
-                print(SLURM_CMD)
-                out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-                TRIM_JID_LIST.append(catchJID(out))
-                #TRIM_JID_LIST.append('0') #### FOR DEBUGGING PURPOSES
-                
-    TRIM_WAIT = ",".join(TRIM_JID_LIST)
-    del TRIM_JID_LIST
+        configFileDict['fastq_dir'] = args.fastq_dir
+    
+    trimmed_fastq_dir = configFileDict['trimmed_fastq_dir']
+    
+    createDir(trimmed_fastq_dir)
+    createLog(trimmed_fastq_dir)
+        
+    FASTQ_FILES = getFastqPrefix(args.fastq_dir)
+    
+    configFileDict['sample_prefix'] = FASTQ_FILES
+    
+    TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
+    
+    configFileDict['TRIM_WAIT'] = TRIM_WAIT
 
-                     
+                 
 # ===========================================================================================================
 STEP2 = "Mapping reads"
 # ===========================================================================================================
                 
 if '2' in task_list: 
     print("Running mapping of reads.\n")
-    if not os.path.isdir(trimmed_fastq_dir): 
-        sys.stder("ERROR. The trimmed fastq directory does not exist.")
-    else: 
-        bam_dir = f"{args.output_dir}/bam"
-        configFileDict['bam_dir'] = bam_dir
-        if os.path.isdir(bam_dir):
-            sys.stderr("ERROR. The directory already exists! Exiting to avoid overwriting files")
-        else: 
-            os.mkdir(bam_dir)
-            os.mkdir(f"{bam_dir}/log")
-            
-            # Create list with JOBIDs of trimming. This is important because it allows for the rest of the submitted jobs to wait for this. 
-            MAP_JID_LIST = []
-            FASTQ_FILES = getFastqPrefix(args.fastq_dir)
-            
-            if configFileDict["mapper"] == "bowtie2":
-                bowtie_params = configFileDict['bowtie_parameters']
-                map_bin = configFileDict['bowtie2']
-                
-            for file in FASTQ_FILES:
-                #bowtie2 -p 8 -x $mm10 --maxins 2000 -N 1 -1 testFile_R1_001.trim.fastq.gz -2 testFile_R2_001.trim.fastq.gz -S testFile.sam                                                         
-                
-                MAP_CMD = "{mapper} {parameters} -1 {dir}/{file}_R1_001.trim.fastq.gz -2 {dir}/{file}_R2_001.trim.fastq.gz | {samtools} -b -h -o {bam_dir}/{file}.bam".format(mapper=map_bin, parameters=bowtie_params,dir=trimmed_fastq_dir,file=file, samtools = configFileDict["samtools"], bam_dir=bam_dir)
-                if '1' in task_list: 
-                    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{bam_dir}/log", uid = configFileDict["uid"], cmd = MAP_CMD, JID=TRIM_WAIT)
-                    print(SLURM_CMD)
-                else: 
-                    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{bam_dir}/log", uid = configFileDict["uid"], cmd = MAP_CMD)
-                    print(SLURM_CMD)
-                out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-                MAP_JID_LIST.append(catchJID(out))
-                #MAP_JID_LIST.append('0')
-                
-    MAP_WAIT = ",".join(MAP_JID_LIST)
-    del MAP_JID_LIST
+    
+    if '1' not in task_list:
+        if not args.fastq_dir or args.trimmed_fastq_dir: 
+            sys.stderr("ERROR. Please provide a fastq directory using -fastq or a trimmed directory -trimfastq")
+        
+        createDir(bam_dir)
+        createLog(bam_dir)
+        
+    if args.fastq_dir: 
+        FASTQ_PREFIX = getFastqPrefix(configFileDict['fastq_dir'])
+        FASTQ_PATH = configFileDict['fastq_dir']
+    else:
+        FASTQ_PREFIX = getFastqPrefix(configFileDict['trimmed_fastq_dir'])
+        FASTQ_PATH = configFileDict['trimmed_fastq_dir']
+    if configFileDict["mapper"] == "bowtie2":
+        MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
+        configFileDict['MAP_WAIT'] = MAP_WAIT                
+
+                    
+# ===========================================================================================================
+STEP3 = "Filtering reads"
+# ===========================================================================================================  
 
 if '3' in task_list: 
     print(" * Running filtering and sorting of BAM files\n")
-    sorted_bam_dir = f"{args.output_dir}/sorted_bam"
-    bam_dir = f"{args.output_dir}/bam"
-    if not os.path.isdir(bam_dir):
-        sys.stderr("ERROR! The bam directory does not exist.")
-    elif os.path.isdir(sorted_bam_dir): 
-        sys.stderr("ERROR! The sorted bam directory already exist.")
-    else: 
-        os.mkdir(sorted_bam_dir)
-        os.mkdir(f"{sorted_bam_dir}/log")
-        
-        BAM_FILTER_JID_LIST = []
-        BAM_FILES = glob.glob(f"{bam_dir}/*.bam")
-        
-        for bam in BAM_FILES: 
-            OUTPUT_FILE = os.path.basename(bam).replace(".bam",".QualTrimNoMt.bam")
-            print(OUTPUT_FILE)
-            
-            FILTER_CMD = "{samtools} view {parameters} | awk '{{if(\$3!~/chr[MT]/) {{print}}}}' | {samtools} sort -O BAM -T {bam_dir}/{file} -o {sorted_bam_dir}/{output}".format(samtools=configFileDict["samtools"], parameters=configFileDict['filter_bam'], bam_dir=bam_dir, file=bam, sorted_bam_dir=sorted_bam_dir, output=OUTPUT_FILE)
-            print(FILTER_CMD)
-            
-            if '2' in task_list: 
-                SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = f"{sorted_bam_dir}/log", uid = configFileDict["uid"], cmd = FILTER_CMD, JID=MAP_WAIT)
-            else: 
-                SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = f"{sorted_bam_dir}/log", uid = configFileDict["uid"], cmd = FILTER_CMD)
-            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-            BAM_FILTER_JID_LIST.append(catchJID(out))
-    FILTER_BAM_WAIT = ",".join(BAM_FILTER_JID_LIST)
-    del BAM_FILTER_JID_LIST
-
-
-
+    if not args.sorted_bam_dir: 
+        sorted_bam_dir = f"{args.output_dir}/sorted_bam"
+        configFileDict['sorted_bam_dir'] = sorted_bam_dir 
+        createDir(sorted_bam_dir)
+        createLog(sorted_bam_dir)
+    
+    if '2' not in task_list:    
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
+        BAM_PREFIX = [os.path.basename(i).replace(".bam","") for i in BAM_FILES]
+        print(BAM_PREFIX)
+    else:
+        BAM_PREFIX = FASTQ_PREFIX
                 
+    FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_PREFIX, configFileDict['bam_dir'])
+    configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
+
+                    
+# ===========================================================================================================
+STEP4 = "Marking duplicated reads"
+# ===========================================================================================================
+        
+if '4' in task_list: 
+    print(" * Running PCR duplication detection using PICARD\n")
+    PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict, BAM_FILES,BAM_PCR_PATH)
+    configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
+
+                    
+# ===========================================================================================================
+STEP5 = "Removing duplicated reads"
+# ===========================================================================================================
+
+if '5' in task_list: 
+    print(" * Running removal of PCR duplicated reads.\n")
+    PCR_REMOVAL_WAIT = submitPCRremoval(configFileDict,BAM_REMOVE_DUP)
+    configFileDict['PCR_REMOVAL_WAIT'] = PCR_REMOVAL_WAIT
+    
+                  
+# ===========================================================================================================
+STEP6 = "Indexing BAM FILES"
+# ===========================================================================================================   
             
-            
+if '6' in task_list: 
+    print(" * Indexing BAM FILES")
+    INDEXING_BAM_WAIT = submitIndexingBAM(configFileDict, BAM_INDEX)
+    configFileDict['INDEXING_BAM_WAIT'] = INDEXING_BAM_WAIT
+
+
+# ===========================================================================================================
+STEP7 = "BIG WIG files creation."
+# ===========================================================================================================   
+
+if '7' in task_list: 
+    print(" * Generating bigwig files for visualization")
+    if not args.bigwig_dir: 
+        bigwig_dir = f"{args.output_dir}/bigwig"
+        configFileDict['bigwig_dir'] = bigwig_dir
+        createDir(bigwig_dir)
+        createLog(bigwig_dir)
+    BIGWIG_WAIT = submitBam2bw(configFileDict, BAM_BW)
+    configFileDict['BIGWIG_WAIT'] = BIGWIG_WAIT
+
+
+
+
+# ===========================================================================================================
+STEP8 = "BAM 2 BED"
+# ===========================================================================================================   
+
+if '8' in task_list: 
+    print (" * Running bam2bed and extended bed")
+    if not args.bed_dir: 
+        bed_dir = f"{args.output_dir}/bed"
+        configFileDict['bed_dir'] = bed_dir 
+        createDir(bed_dir)
+        createLog(bed_dir)
+    BAM2BED_WAIT = submitBam2Bed(configFileDict, BAM_BED)
+    configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
+
+
+# ===========================================================================================================
+STEP9 = "Extend bed reads"
+# ===========================================================================================================   
+
+if '9' in task_list:
+    print(" * Running extension of reads in bed file")
+    EXTEND_READS = submitExtendReads(configFileDict)
+
+
+
+
+
+
+'''
+
+
+
+
+
+

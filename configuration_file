@@ -13,11 +13,15 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 
 #### NEEDED FILES PATH #####
 
-reference_genome, 
+reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/bowtie2-2.4.4
 
 
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
 pairend,1
+
+# Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
+technology,ATACseq
+
 
 #Trim reads using cutadapt
 #Example of how a cutadapt commands looks like 
@@ -31,7 +35,7 @@ mapper,bowtie2
 #Choose parameters for mapping using bowtie2
 #Example of how a bowtie command looks like 
 #bowtie2 -p 8 -x $mm10 --maxins 2000 -N 1 -1 testFile_R1_001.trim.fastq.gz -2 testFile_R2_001.trim.fastq.gz -S testFile.sam                                                         
-bowtie_parameters, -p 8 -x $mm10 --maxins 2000 -N 1
+bowtie_parameters, -p 8 -maxins 2000 -N 1
 
 #Filter and sort BAM
 #samtools view -h ${file}.bam  | grep -v chrM | samtools view -b -h -F 4 -q 20 | samtools sort -O BAM -T ${file} > testFile.QualTrimNoMt.bam
@@ -44,7 +48,6 @@ filter_bam, -b -h -F 4 -q 20
 
 #Filter duplicates.
 #Example: samtools view -b -h -F 1792 testFile.QualTrimNoMt.Picard.bam > testFile.NoDup.bam
- 
 PCR_duplicates_removal, view -b -h -F 1792
 
 #Deeptools to create normalized .bw files 

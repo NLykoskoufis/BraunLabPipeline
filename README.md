@@ -1,2 +1,180 @@
-# braunATACpipeline
-Pipeline for ATAC-seq
+---
+title: Pipeline for processing ATAC-seq / ChIPseq and RNAseq experiments
+author: Nikolaos Lykoskoufis
+date: 12th of July 2021
+geometry: margin=2cm
+---
+
+This is a document explaining how the pipeline works.
+The pipeline is split in multiple steps. Depending on the type of data you are using, different steps will be ran. 
+
+The pipeline works with a configuration file that contains all the paths for the software to be used and the different commands to be used per step. 
+
+You can run the whole pipeline or specify which step(s) you want to run.
+
+## How to use the pipeline 
+
+```bash 
+python3 main.py --help
+#The following command outputs how to use the script. 
+#usage: main.py [-h] [-v] [-fastq FASTQ_DIR] [-trimfastq TRIMMED_FASTQ_DIR]
+#               [-bam BAM_DIR] [-sortedBam SORTED_BAM_DIR] [-eqd EQ_DIR]
+#               [-bed BED_DIR] [-bw BIGWIG_DIR] [-od OUTPUT_DIR] -cf
+#               CONFIG_FILE_PATH [-tf] [-tb] -t TASK [TASK ...]
+
+#Pipeline to process data from illumina sequencers.
+
+#optional arguments:
+#  -h, --help            show this help message and exit
+#  -v                    Display pipeline version
+#  -fastq FASTQ_DIR, -fastqdir FASTQ_DIR
+#                        Absolut path fastq to diretor(y)ies. If multiple
+#                        directories, separate eache path with space
+#  -trimfastq TRIMMED_FASTQ_DIR, -trimfastqdir TRIMMED_FASTQ_DIR
+#                        Absolut path trimmed fastq to diretor(y)ies. If
+#                        multiple directories, separate eache path with space
+#  -bam BAM_DIR, -bamdir BAM_DIR
+#                        Path bam diretory, is multiple, separate with space.
+#  -sortedBam SORTED_BAM_DIR
+#                        Path to sorted bam directory, if not set, first bam
+#                        directory is used.
+#  -eqd EQ_DIR, -quantification_dir EQ_DIR
+#                        Absolut path peak calling diretory
+#  -bed BED_DIR, -bed BED_DIR
+#                        Absolut path of where to save/read bed files
+#  -bw BIGWIG_DIR, -bigwig BIGWIG_DIR
+#                        Absolut path peak calling diretory
+#  -od OUTPUT_DIR, -outputdir OUTPUT_DIR
+#                        Path to output directory
+#  -cf CONFIG_FILE_PATH  Name of your configuration file: project_run_config_V1
+#  -tf                   True if you want to do a backup of fastq files. '-rn'
+#                        and '-pn' options are mandatory to do a backup.
+#  -tb                   True if you want to do a backup of bam files. '-rn'
+#                        and '-pn' options are mandatory to do a backup.
+#  -t TASK [TASK ...]
+```
+The different arguments of the pipeline are: 
+
+| Argument | Definition |
+|:---:|:-------------------------------------------:|
+| **-cf**  | Absolute path to the configuration file |
+| **-raw** | Absolute path to the raw directory |
+| -od | Absolute path to the output directory | 
+| -fastq | Abolute path to the fastq directory | 
+| -trimfastq | Absolute path to the trimmed fastq directory | 
+| -bam | Absolute path to the bam directory | 
+| -sortedBam | Absolute path to the sortedBam directory | 
+| -eqd | Absolute path to the quantification directory | 
+| -bed | Absolute path to the bed directory | 
+| -bw | Absolute path to the bigwid directory | 
+| **-t** | Tasks to be ran. It can be an integer from 1 to 8 or "all" which specifies run all steps |
+
+The arguments in bold are required for the pipeline no matter whether you run all the steps or specific steps. 
+The arguments that you specify really depend on the steps you wan to run. 
+Below you will find the required arguments depending on the steps you run. 
+
+##Steps of the pipeline 
+
+#### Trimming reads 
+
+This step trims the reads using cutadapt. 
+
+#### Mapping reads 
+
+This step maps reads. Depending whether you have ATAC-seq/ChIP-seq or RNAseq data, the mapper will be different. 
+
+
+#### Mark PCR duplicates
+This step marks duplicated reads using PICARD.
+
+#### Filtering, sorting and indexing bam file
+This step removes duplicated reads, low quality reads, chrM and sorts, index the bam files. 
+
+#### CREATE .bw for visualization.
+This step reads the bam files and created .bw files for visualization using IGV for exmample.
+
+#### bam2bed 
+This step converts bam files to UCSC bed files. 
+
+#### Bed file with extended reads 
+This step extends the reas on the bed files depending on the given extension provided
+
+#### PEAK Calling
+This step performs peak calling using MACS2. This is a step unique to ATAC-seq or ChIP-seq data.
+
+#### Exon quantification
+TBD
+
+##### Running the whole pipeline 
+If you run the whole pipeline, then you need to specify: 
+-cf
+-raw 
+-t 
+-fastq
+
+The pipeline will read the configuration file and run all steps and save the results under the raw directory given. No need to specify the directories, they are automatically created by the pipeline. IF the raw directory contains any of the other directories that will be created automatically by the pipeline, then it throws an error. For example if you already had created the bam directory under the raw directory, the pipeline will throw an error stating that the bam directory already exists and will stop. This is to prevent overwriting or erasing files by mistake. 
+
+##### Running step 1
+```bash 
+python3 main.py -cf -raw -fastq -t
+```
+
+##### Running step 2 or from step 2
+```bash 
+python3 main.py -cf -raw  -fastq -od -t
+```
+##### Running step 3 or from step 3
+```bash 
+python3 main.py 
+    -cf 
+    -raw
+    -bam 
+    -od
+    -t 
+```
+##### Running step 4 or from step 4
+```bash 
+python3 main.py
+    -cf 
+    -raw 
+    -bam 
+    -od 
+    -t 
+```
+##### Running step 5 or from step 5
+```bash 
+python3 main.py
+    -cf 
+    -raw 
+    -bam 
+    -od 
+    -t 
+```
+##### Running step 6 or from step 6
+```bash 
+python3 main.py
+    -cf 
+    -raw 
+    -bam 
+    -od 
+    -t 
+```
+##### Running step 7 or from step 7
+```bash 
+python3 main.py
+    -cf 
+    -raw 
+    -bed
+    -od 
+    -t
+```
+##### Running step 8 or from step 8
+```bash 
+python3 main.py 
+    -cf
+    -raw 
+    -bed 
+    -d 
+    -t 
+```
+
