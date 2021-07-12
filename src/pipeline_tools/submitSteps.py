@@ -68,10 +68,13 @@ def submitFilteringBAM(configFileDict, BAM_PREFIX,BAM_PATH):
         OUTPUT_FILE = "{}.QualTrimNoMt.bam".format(os.path.basename(bam))
         print(OUTPUT_FILE)
         
-        FILTER_CMD = "{samtools} view {parameters} {bam_dir}/{file} | awk '{{if(\$3!~/chr[MT]/) {{print}}}}' | {samtools} sort -O BAM -T {sorted_bam_dir}/{output} -o {sorted_bam_dir}/{output}".format(samtools=configFileDict["samtools"], parameters=configFileDict['filter_bam'], bam_dir=BAM_PATH, file=INPUT_FILE, sorted_bam_dir=configFileDict["sorted_bam_dir"], output=OUTPUT_FILE)
+        FILTER_CMD = "samtools view -h -F 1796 -q 20 | awk '{{if(\$3!~/chr[MT]/){{print}}}}' | samtools sort -O BAM -T prefix -o filename.NoDup.bam"
+        
+        
+        #FILTER_CMD = "{samtools} view {parameters} {bam_dir}/{file} | awk '{{if(\$3!~/chr[MT]/) {{print}}}}' | {samtools} sort -O BAM -T {sorted_bam_dir}/{output} -o {sorted_bam_dir}/{output}".format(samtools=configFileDict["samtools"], parameters=configFileDict['filter_bam'], bam_dir=BAM_PATH, file=INPUT_FILE, sorted_bam_dir=configFileDict["sorted_bam_dir"], output=OUTPUT_FILE)
         print(FILTER_CMD)
         if '2' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['sorted_bam_dir']), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['MAP_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['sorted_bam_dir']), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['sorted_bam_dir']), uid = configFileDict["uid"], cmd = FILTER_CMD)
             
@@ -101,7 +104,7 @@ def submitPCRduplication(configFileDict, BAM_FILES,BAM_PATH):
         
         PCR_CMD = "{PICARD} MarkDuplicates I={input} O={output} M={metrix}".format(PICARD=configFileDict['PICARD'], input=bam, output=OUTPUT_FILE, metrix=METRIX_FILE)
         if '3' in configFileDict['task_list']:
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['MAP_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = PCR_CMD)
     PCR_DUPLICATION_WAIT = ",".join(PCR_DUP_JID_LIST)
@@ -125,7 +128,7 @@ def submitPCRremoval(configFileDict, BAM_PATH):
         OUTPUT_FILE = bam.replace(".Picard.bam",".NoDup.bam")
         RMP_CMD = "{samtools} {parameters} {input} -o {output} ".format(samtools=configFileDict['samtools'], parameters=configFileDict['PCR_duplicates_removal'], input=bam, output=OUTPUT_FILE)
         if '4' in configFileDict['task_list']:
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = RMP_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = RMP_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = RMP_CMD)
     PCR_REMOVAL_WAIT = ",".join(PCR_REMOVAL_JID_LIST)

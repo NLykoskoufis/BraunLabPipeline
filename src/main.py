@@ -148,10 +148,12 @@ if '1' in task_list:
     
 if '2' in task_list:
     # Arguments required here are -cf -raw -fastq -od
-    if not args.fastq_dir: 
-        raise TypeError("ERROR. You need to specify a fastq directory")
-    else:
-        configFileDict['fastq_dir'] = args.fastq_dir 
+    if '1' not in task_list: 
+        if not args.fastq_dir: 
+            raise TypeError("ERROR. You need to specify a fastq directory")
+        else:
+            configFileDict['trimmed_fastq_dir'] = args.fastq_dir 
+    
     
     if args.output_dir:
         print("You specified an output directory. The mapped bam files will be saved in the specified directory and the mapper will not automatically create a bam directory under the raw directory specified")
@@ -277,30 +279,6 @@ if '8' in task_list:
         createLog(configFileDict['peaks_dir'])
 
 
-
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-
-         
-        
-
-
-
-
 ########################
 ##### START TASKS ###### 
 ########################
@@ -315,26 +293,15 @@ STEP1 = "Trimming reads"
 
 if '1' in task_list: 
     print("Running trimming of reads.\n")
-    
-    if not args.fastq_dir: 
-        sys.stderr("ERROR. You need to specify a fastq directory using -fastq/-fastqdir")
-    else: 
-        configFileDict['fastq_dir'] = args.fastq_dir
-    
-    trimmed_fastq_dir = configFileDict['trimmed_fastq_dir']
-    
-    createDir(trimmed_fastq_dir)
-    createLog(trimmed_fastq_dir)
         
-    FASTQ_FILES = getFastqPrefix(args.fastq_dir)
+    fastq_dir = configFileDict['fastq_dir']
+    FASTQ_FILES = getFastqPrefix(fastq_dir)
+    print(FASTQ_FILES[0])
     
     configFileDict['sample_prefix'] = FASTQ_FILES
-    
     TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
-    
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
-
-                 
+               
 # ===========================================================================================================
 STEP2 = "Mapping reads"
 # ===========================================================================================================
@@ -342,26 +309,25 @@ STEP2 = "Mapping reads"
 if '2' in task_list: 
     print("Running mapping of reads.\n")
     
-    if '1' not in task_list:
-        if not args.fastq_dir or args.trimmed_fastq_dir: 
-            sys.stderr("ERROR. Please provide a fastq directory using -fastq or a trimmed directory -trimfastq")
-        
-        createDir(bam_dir)
-        createLog(bam_dir)
-        
-    if args.fastq_dir: 
-        FASTQ_PREFIX = getFastqPrefix(configFileDict['fastq_dir'])
-        FASTQ_PATH = configFileDict['fastq_dir']
-    else:
-        FASTQ_PREFIX = getFastqPrefix(configFileDict['trimmed_fastq_dir'])
-        FASTQ_PATH = configFileDict['trimmed_fastq_dir']
+    FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
+    FASTQ_PATH=configFileDict['trimmed_fastq_dir']
+    
     if configFileDict["mapper"] == "bowtie2":
         MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
         configFileDict['MAP_WAIT'] = MAP_WAIT                
 
-                    
 # ===========================================================================================================
-STEP3 = "Filtering reads"
+STEP3 = "Marking duplicated reads"
+# ===========================================================================================================
+        
+if '4' in task_list: 
+    print(" * Running PCR duplication detection using PICARD\n")
+    PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict, BAM_FILES,BAM_PCR_PATH)
+    configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
+        
+           
+# ===========================================================================================================
+STEP4 = "Filtering reads"
 # ===========================================================================================================  
 
 if '3' in task_list: 
@@ -383,35 +349,6 @@ if '3' in task_list:
     configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
 
                     
-# ===========================================================================================================
-STEP4 = "Marking duplicated reads"
-# ===========================================================================================================
-        
-if '4' in task_list: 
-    print(" * Running PCR duplication detection using PICARD\n")
-    PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict, BAM_FILES,BAM_PCR_PATH)
-    configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
-
-                    
-# ===========================================================================================================
-STEP5 = "Removing duplicated reads"
-# ===========================================================================================================
-
-if '5' in task_list: 
-    print(" * Running removal of PCR duplicated reads.\n")
-    PCR_REMOVAL_WAIT = submitPCRremoval(configFileDict,BAM_REMOVE_DUP)
-    configFileDict['PCR_REMOVAL_WAIT'] = PCR_REMOVAL_WAIT
-    
-                  
-# ===========================================================================================================
-STEP6 = "Indexing BAM FILES"
-# ===========================================================================================================   
-            
-if '6' in task_list: 
-    print(" * Indexing BAM FILES")
-    INDEXING_BAM_WAIT = submitIndexingBAM(configFileDict, BAM_INDEX)
-    configFileDict['INDEXING_BAM_WAIT'] = INDEXING_BAM_WAIT
-
 
 # ===========================================================================================================
 STEP7 = "BIG WIG files creation."
