@@ -108,7 +108,7 @@ def submitFilteringBAM(configFileDict, BAM_FILES):
         FILTER_CMD = "{samtools} view {arguments} -@ 4 {input} | awk '{{if(\$3!='chrM'){{print}}}}' | samtools view -b -o {output_file} -@ 4 && samtools index {output_file} -@ 4".format(samtools = configFileDict['samtools'], arguments=configFileDict['PCR_duplicates_removal'], input = bam, output_file = OUTPUT_FILE)
         
         
-        if '2' in configFileDict['task_list']: 
+        if '3' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
             print(SLURM_CMD)
         else: 
@@ -123,56 +123,8 @@ def submitFilteringBAM(configFileDict, BAM_FILES):
     
 
 
-            
-
-def submitPCRremoval(configFileDict, BAM_PATH):
-    """[Submits jobs for removal of PCR duplicated reads]
-
-    Args:
-        configFileDict ([dict]): [configuration file dictionary]
-        BAM_PATH [str]: Absolute path where BAM FILES are and where to write them. 
-
-    Returns:
-        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
-    """ 
-    PCR_REMOVAL_JID_LIST = []
-    BAM_FILES = glob.glob("{}/*.Picard.bam".format(BAM_PATH))
-    for bam in BAM_FILES:
-        OUTPUT_FILE = bam.replace(".Picard.bam",".NoDup.bam")
-        RMP_CMD = "{samtools} {parameters} {input} -o {output} ".format(samtools=configFileDict['samtools'], parameters=configFileDict['PCR_duplicates_removal'], input=bam, output=OUTPUT_FILE)
-        if '4' in configFileDict['task_list']:
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = RMP_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
-        else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = RMP_CMD)
-    PCR_REMOVAL_WAIT = ",".join(PCR_REMOVAL_JID_LIST)
-    del PCR_REMOVAL_JID_LIST
-    return PCR_REMOVAL_WAIT
-
-
-def submitIndexingBAM(configFileDict, BAM_PATH):
-    """[Submits jobs for removal of PCR duplicated reads]
-
-    Args:
-        configFileDict ([dict]): [configuration file dictionary]
-        BAM_PATH [str]: Absolute path where BAM FILES are and where to write them. 
-
-    Returns:
-        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
-    """
-    INDEX_JID_LIST = []
-    BAM_FILES = glob.glob("{}/*.bam".format(BAM_PATH))
-    for bam in BAM_FILES:
-        INDEX_CMD = "{samtools} index {input}".format(samtools=configFileDict['samtools'], input=bam)
-        if '5' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = INDEX_CMD, JID=configFileDict['PCR_REMOVAL_WAIT'])
-        else:
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = INDEX_CMD)
-    INDEXING_BAM_WAIT = ",".join(INDEX_JIS_LIST)
-    del INDEX_JID_LIST
-    return INDEXING_BAM_WAIT
-
-
-def submitBam2bw(configFileDict, BAM_BW):
+        
+def submitBAM2BW(configFileDict, BAM_FILES):
     """[Submits jobs for removal of PCR duplicated reads]
 
     Args:
@@ -183,14 +135,28 @@ def submitBam2bw(configFileDict, BAM_BW):
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
     """
     BW_JID_LIST = []
-    BAM_FILES = glob.glob("{}/*.bam".format(BAM_BW))
+    OUTPUT_DIR = configFileDict['bw_dir']
     for bam in BAM_FILES:
-        #bamCoverage --bam ${file}.NoDup.bam --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max -o ${file}.RPKMNorm.bw
-
-        BW_CMD = "{bin} {parameters} --bam {input}"
+        input_file = os.path.basename(bam).split(".")[0]
+        OUTPUT_FILE = "{}/{}.bw".format(OUTPUT_DIR, input_file)
         
+        BAM2BW_CMD = "{bamcoverage} {arguments} --bam {input} -o {output}".format(bamcoverage=configFileDict['bamCoverage'], arguments=configFileDict['bam2bw'], input=bam, output=OUTPUT_FILE)
         
-def submitBam2Bed(configFileDict, BAM_PATH):
+        if '4' in configFileDict['task_list']:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            print(SLURM_CMD)
+        else:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD)
+            print(SLURM_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BW_JID_LIST.append(catchJID(out))
+    
+    BAM2BW_WAIT = ",".join(BW_JID_LIST)
+    del BW_JID_LIST
+    return BAM2BW_WAIT
+            
+        
+def submitBAM2BED(configFileDict, BAM_FILES):
     """[Submits jobs for removal of PCR duplicated reads]
 
     Args:
@@ -201,18 +167,28 @@ def submitBam2Bed(configFileDict, BAM_PATH):
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
     """
     BAM2BED_JID_LIST = []
-    BAM_FILES = glob.glob("{}/*.bam".format(BAM_PATH))
+    OUTPUT_DIR = configFileDict['bed_dir']
     for bam in BAM_FILES:
-        BAM2BED_CMD = "{bedtools} bamtobed -i {input} | awk -F '\t' '{{print \$1,\$2,\$3,\$3-\$2,\$5,\$6}}' > {output}".format(bedtools=configFileDict['bedtools'], input=bam, output=os.path.basename(bam).replace(".bam",".bed"))
-        if '6' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['bed_dir']), uid = configFileDict["uid"], cmd = BAM2BED_CMD, JID=configFileDict['INDEXING_BAM_WAIT'])
+        input_file = os.path.basename(bam).split(".")[0]
+        OUTPUT_FILE = "{}/{}.bed".format(OUTPUT_DIR, input_file)
+        
+        BAM2BED_CMD = "{bedtools} bamtobed -i {input} | awk '{{print \$1\"\\t\"\$2\"\\t\"\$3\"\\t\"\$3-\$2\"\\t\"\$5\"\\t\"\$6}}' > {output}".format(bedtools=configFileDict['bedtools'], input=bam, output=OUTPUT_FILE)
+        
+        if '4' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BED_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            print(SLURM_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['bed_dir']), uid = configFileDict["uid"], cmd = BAM2BED_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BED_CMD)
+            print(SLURM_CMD)
+            
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BAM2BED_JID_LIST.append(catchJID(out))
+        
     BAM2BED_WAIT = ",".join(BAM2BED_JID_LIST)
     del BAM2BED_JID_LIST
     return BAM2BED_WAIT
 
-def submitExtendReads(configFileDict):
+def submitExtendReads(configFileDict,BED_FILES):
     """[Submits jobs for removal of PCR duplicated reads]
 
     Args:
@@ -222,3 +198,51 @@ def submitExtendReads(configFileDict):
     Returns:
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
     """
+    EXTENDBED_JID_LIST = []
+    OUTPUT_DIR = configFileDict['extended_bed_dir']
+    for bam in BED_FILES:
+        input_file = os.path.basename(bam).split(".")[0]
+        OUTPUT_FILE = "{}/{}.extendedReads.bed".format(OUTPUT_DIR, input_file)
+        
+        EXTENDBED_CMD = "source {BIN} {input} {extension} {genomeFileExtension} {output}".format(BIN=configFileDict['extendReadsScript'], extension=configFileDict['extend_reads'], input=bam, genomeFileExtension=configFileDict['genomeFileSize'], output=OUTPUT_FILE)
+        
+        if '4' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = EXTENDBED_CMD, JID=configFileDict['BAM2BED_WAIT'])
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = EXTENDBED_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        EXTENDBED_JID_LIST.append(catchJID(out))
+        
+    EXT_BED_WAIT = ",".join(EXTENDBED_JID_LIST)
+    del EXTENDBED_JID_LIST
+    return EXT_BED_WAIT
+
+
+def submitPeakCalling(configFileDict,BED_FILES):
+    """[Submits jobs peak calling]
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        BED_FILES [str]: Absolute path where BAM FILES are and where to write them. 
+
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """
+    PEAK_CALLING_JID_LIST = []
+    OUTPUT_DIR = configFileDict['peaks_dir']
+    for bam in BED_FILES:
+        input_file = os.path.basename(bam).split(".")[0]
+        OUTPUT_FILE = "{}/{}.MACS".format(OUTPUT_DIR, input_file)
+        
+        PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=bam, output=OUTPUT_FILE, prefix=input_file)
+        
+        if '6' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        PEAK_CALLING_JID_LIST.append(catchJID(out))
+        
+    PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
+    del PEAK_CALLING_JID_LIST
+    return PEAK_CALLING_WAIT

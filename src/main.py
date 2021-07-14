@@ -89,7 +89,7 @@ if not args.task:
     sys.exit(1)
 task_list = args.task
 if 'all' in task_list:
-    task_list = ['1','2','3','4','5','6','7','8','9','10']
+    task_list = ['1','2','3','4','5','6','7','8']
 
 if not args.config_file_path:
     sys.stderr.write('ERROR: You must provide a configuration file to run the pipeline : arg -cf\n')
@@ -215,7 +215,7 @@ if '5' in task_list: ## CREATE BIGWIG
         if not args.bam_dir: 
             raise TypeError("You need to specify a bam directory.")
         else: 
-            configFileDict['bam_dir'] = args.bam_dir 
+            configFileDict['filtered_bam_dir'] = args.bam_dir 
     
     if args.output_dir: 
         print("You specified an output directory. The pipeline will therefore not create one.")
@@ -233,7 +233,7 @@ if '6' in task_list: #### BAM 2 BED
         if not args.bam_dir: 
              raise TypeError("You need to specify a bam directory.")
         else: 
-            configFileDict['bam_dir'] = args.bam_dir
+            configFileDict['filtered_bam_dir'] = args.bam_dir
     
     if args.output_dir: 
         print("You specified an output directory. The pipeline will therefore not create one.")
@@ -271,7 +271,7 @@ if '8' in task_list:
             if not args.bed_dir: 
                 raise TypeError("You need to specify a bed directory")
             else: 
-                configFileDict['bed_dir'] = args.bed_dir
+                configFileDict['extended_bed_dir'] = args.bed_dir
         if args.output_dir: 
             print("You specified an output directory. The pipeline will therefore not create one.")
             configFileDict['peaks_dir'] = f"{args.output_dir}/peaks"
@@ -279,9 +279,9 @@ if '8' in task_list:
             configFileDict['peaks_dir'] = f"{args.raw_dir}/peaks"
         if checkDir(configFileDict['peaks_dir']): 
             raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
-    else: 
-        createDir(configFileDict['peaks_dir'])
-        createLog(configFileDict['peaks_dir'])
+        else: 
+            createDir(configFileDict['peaks_dir'])
+            createLog(configFileDict['peaks_dir'])
 
 
 ########################
@@ -341,7 +341,7 @@ if '3' in task_list:
         configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
         
 # ===========================================================================================================
-STEP4 = "Filtering reads"
+STEP4 = "Filtering reads and indexing bam file"
 # ===========================================================================================================  
 
 if '4' in task_list: 
@@ -359,39 +359,67 @@ if '4' in task_list:
     
 
 # ===========================================================================================================
-STEP7 = "BIG WIG files creation."
+STEP5 = "BIG WIG files creation."
 # ===========================================================================================================   
 
-if '7' in task_list: 
+if '5' in task_list: 
     print(" * Generating bigwig files for visualization")
-    if not args.bigwig_dir: 
-        bigwig_dir = f"{args.output_dir}/bigwig"
-        configFileDict['bigwig_dir'] = bigwig_dir
-        createDir(bigwig_dir)
-        createLog(bigwig_dir)
-    BIGWIG_WAIT = submitBam2bw(configFileDict, BAM_BW)
-    configFileDict['BIGWIG_WAIT'] = BIGWIG_WAIT
+    if '4' not in task_list:
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
+        BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+        configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+    else: 
+        BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+        BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+        configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
 
 
 # ===========================================================================================================
-STEP8 = "BAM 2 BED"
+STEP6 = "BAM 2 BED"
 # ===========================================================================================================   
+
+if '6' in task_list: # Need to wait for '4' or none
+    print (" * Running bam2bed")
+    if '4' not in task_list:
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
+        BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
+        configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+    else: 
+        BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+        BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
+        configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
+    
+
+
+# ===========================================================================================================
+STEP7 = "Extend bed reads"
+# ===========================================================================================================   
+
+if '7' in task_list:
+    print(" * Running extension of reads in bed file")
+    if '4' not in task_list:
+        BED_FILES = glob.glob("{}/*.bed".format(configFileDict['bed_dir']))
+        EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
+        configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
+    else: 
+        BED_FILES = ["{}/{}.bed".format(configFileDict['bed_dir'], i) for i in configFileDict['sample_prefix']]
+        EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
+        configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
+        
+        
+
+# ===========================================================================================================
+STEP7 = "PEAK CALLING"
+# ===========================================================================================================
 
 if '8' in task_list: 
-    print (" * Running bam2bed and extended bed")
-    if not args.bed_dir: 
-        bed_dir = f"{args.output_dir}/bed"
-        configFileDict['bed_dir'] = bed_dir 
-        createDir(bed_dir)
-        createLog(bed_dir)
-    BAM2BED_WAIT = submitBam2Bed(configFileDict, BAM_BED)
-    configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
-
-
-# ===========================================================================================================
-STEP9 = "Extend bed reads"
-# ===========================================================================================================   
-
-if '9' in task_list:
-    print(" * Running extension of reads in bed file")
-    EXTEND_READS = submitExtendReads(configFileDict)
+    print(" * Running peak calling\n")
+    if '6' not in task_list: 
+        BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+        PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
+        configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+    else: 
+        BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
+        PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
+        configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+        

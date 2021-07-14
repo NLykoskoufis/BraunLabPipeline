@@ -13,8 +13,9 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 
 #### NEEDED FILES PATH #####
 
-reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
 
+genomeFileSize,/home/users/l/lykoskou/Software/bedtools2/genomes/mouse.mm10.genome
 
 
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
@@ -52,7 +53,7 @@ filter_bam, -b -h -F 4 -q 20
 PCR_duplicates_removal,-h -F 1796 -q20
 
 #Deeptools to create normalized .bw files 
-bamCoverage, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
+bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
 
 #Bam2Bed Convert bam 2 bed file. 1--> YES; 0--> NO
 bam2bed, 1
@@ -62,7 +63,8 @@ extend_reads, 150
 
 #Peak calling with MACS2
 #Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
-peak_calling, --format BED --nomodel -g mm -B 
+peak_calling,--format BED --nomodel -g mm -B 
+
 
 #Perform fastq QC using FastQC (0=no, 1=yes)
 fastq_qc,1
@@ -76,7 +78,7 @@ mapping_qc_graphs,1
 #######################################################################################################
 slurm_trim, --time=04:00:00 --mem=10G --partition=shared-cpu
 slurm_mapping, --time=12:00:00 --mem=60G --partition=shared-cpu -n 1 -N 1 -c 8
-slurm_peakCalling, --time=12:00:00 --mem=20G --partition-shared-cpu
+slurm_peakCalling, --time=12:00:00 --mem=20G --partition=shared-cpu
 slurm_general, --time=12:00:00 --mem=20G --partition=shared-cpu
 slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 4
 
@@ -87,11 +89,18 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #In each lane, the first word is a keyword that should not be changed, the second part after
 #the comma is the path to the corresponding executable.
 
+
+#extendReads script 
+extendReadsScript,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/extendBedReads.sh
+
 #path to python 3.2
 python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
 
 #Path to cutadapt
 cutadapt,/home/users/l/lykoskou/.local/bin/cutadapt
+
+#Bedtools 
+bedtools,/home/users/l/lykoskou/Software/bedtools2/bin/bedtools
 
 #Path to bowtie2
 bowtie2,/home/users/l/lykoskou/Software/bowtie2-2.4.4/bowtie2
@@ -110,3 +119,12 @@ picard,java -Xmx8g -jar /srv/beegfs/scratch/groups/funpopgen/bin/picard.jar
 
 #WSBATCH
 wsbatch,/srv/beegfs/scratch/groups/funpopgen/bin/wsbatch
+
+#bamCoverage, 
+bamCoverage,/home/users/l/lykoskou/.local/bin/bamCoverage
+
+#MACS2
+macs2,/home/users/l/lykoskou/Software/MACS2-2.2.7.1/bin/macs2
+
+#bedClip
+bedClip,/home/users/l/lykoskou/bin/bedClip
