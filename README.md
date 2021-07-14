@@ -83,12 +83,14 @@ This step trims the reads using cutadapt.
 
 This step maps reads. Depending whether you have ATAC-seq/ChIP-seq or RNAseq data, the mapper will be different. 
 
+#### Sort bam files by coordinates. 
+This step has to be done because PICARD requires sorted by coordinate bam files. 
 
 #### Mark PCR duplicates
 This step marks duplicated reads using PICARD.
 
 #### Filtering, sorting and indexing bam file
-This step removes duplicated reads, low quality reads, chrM and sorts, index the bam files. 
+This step removes duplicated reads, low quality reads, chrM the bam files. Then it sorts and index. 
 
 #### CREATE .bw for visualization.
 This step reads the bam files and created .bw files for visualization using IGV for exmample.
@@ -104,6 +106,21 @@ This step performs peak calling using MACS2. This is a step unique to ATAC-seq o
 
 #### Exon quantification
 TBD
+
+## File naming convention
+
+**This is very important!!!**
+##### Fastq files
+Fastq files should be written in this specific way: 
+SampleID*.R1_*.fastq.gz
+SampleID*.R2_*.fastq.gz 
+The pipeline will split the filename by "." and take as sampleID the first element which in our example is "SampleID". Then it will look for the R1 or R2 and the fastq.gz. If your fastq files are not written this way the pipeline will FAIL. 
+
+##### Bam Files
+Bam files need to be written as following: 
+sampleID.*.bam 
+The asterisk can be whatever. The pipeline splits the file name by "." and takes the first element as sampleID in this case the sample ID is "sampleID" and disregards the rest. 
+
 
 ##### Running the whole pipeline 
 If you run the whole pipeline, then you need to specify: 

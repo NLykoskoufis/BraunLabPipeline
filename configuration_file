@@ -13,7 +13,8 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 
 #### NEEDED FILES PATH #####
 
-reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/bowtie2-2.4.4
+reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+
 
 
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
@@ -35,7 +36,7 @@ mapper,bowtie2
 #Choose parameters for mapping using bowtie2
 #Example of how a bowtie command looks like 
 #bowtie2 -p 8 -x $mm10 --maxins 2000 -N 1 -1 testFile_R1_001.trim.fastq.gz -2 testFile_R2_001.trim.fastq.gz -S testFile.sam                                                         
-bowtie_parameters, -p 8 -maxins 2000 -N 1
+bowtie_parameters, -p 8 --maxins 2000 -N 1
 
 #Filter and sort BAM
 #samtools view -h ${file}.bam  | grep -v chrM | samtools view -b -h -F 4 -q 20 | samtools sort -O BAM -T ${file} > testFile.QualTrimNoMt.bam
@@ -47,8 +48,8 @@ filter_bam, -b -h -F 4 -q 20
 #Example: java -Xmx8g -jar $PICARD MarkDuplicates I=${file}.QualTrimNoMt.bam O=${file}.QualTrimNoMt.Picard.bam M=${file}.metrix
 
 #Filter duplicates.
-#Example: samtools view -b -h -F 1792 testFile.QualTrimNoMt.Picard.bam > testFile.NoDup.bam
-PCR_duplicates_removal, view -b -h -F 1792
+#Example: samtools view -b -h -F 1796 -20 testFile.QualTrimNoMt.Picard.bam > testFile.NoDup.bam
+PCR_duplicates_removal,-h -F 1796 -q20
 
 #Deeptools to create normalized .bw files 
 bamCoverage, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
@@ -61,7 +62,7 @@ extend_reads, 150
 
 #Peak calling with MACS2
 #Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
-MACS2, --format BED --nomodel -g mm -B 
+peak_calling, --format BED --nomodel -g mm -B 
 
 #Perform fastq QC using FastQC (0=no, 1=yes)
 fastq_qc,1
@@ -77,6 +78,7 @@ slurm_trim, --time=04:00:00 --mem=10G --partition=shared-cpu
 slurm_mapping, --time=12:00:00 --mem=60G --partition=shared-cpu -n 1 -N 1 -c 8
 slurm_peakCalling, --time=12:00:00 --mem=20G --partition-shared-cpu
 slurm_general, --time=12:00:00 --mem=20G --partition=shared-cpu
+slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 4
 
 #######################################################################################################
 #                                         SOFTWARE PATH                                               #
@@ -103,6 +105,8 @@ samtools,/home/users/l/lykoskou/Software/samtools-1.12/samtools
 #Rscript
 Rscript,/opt/ebsofts/R/3.6.2-foss-2019b/bin/Rscript
 
+#PICARD-Tools
+picard,java -Xmx8g -jar /srv/beegfs/scratch/groups/funpopgen/bin/picard.jar
 
 #WSBATCH
 wsbatch,/srv/beegfs/scratch/groups/funpopgen/bin/wsbatch

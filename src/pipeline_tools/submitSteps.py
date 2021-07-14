@@ -21,7 +21,7 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
         #TRIM_JID_LIST.append('0') #### FOR DEBUGGING PURPOSES
         
     TRIM_WAIT = ",".join(TRIM_JID_LIST)
-    del TRIM_JID_LIST
+    #del TRIM_JID_LIST
     return TRIM_WAIT
 
 
@@ -34,10 +34,13 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
         FASTQ_PATH [str]: Absolute path of the FASTQ files
     Returns:
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
-    """    
+    """  
+    MAP_JID_LIST = []
     for file in FASTQ_PREFIX:                                                        
-        MAP_JID_LIST = []
-        MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'])
+
+        MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {sorted_bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'], sorted_bam_dir=configFileDict['sorted_bam_dir'])
+        
+        
         if '1' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = MAP_CMD, JID=configFileDict["TRIM_WAIT"])
             print(SLURM_CMD)
@@ -45,49 +48,14 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = MAP_CMD)
             print(SLURM_CMD)
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        MAP_JID_LIST.append(catchJID(out))
-                
+        MAP_JID_LIST.append(catchJID(out))            
+    
     MAP_WAIT = ",".join(MAP_JID_LIST)
-    del MAP_JID_LIST
+    #del MAP_JID_LIST
     return MAP_WAIT
 
 
-def submitFilteringBAM(configFileDict, BAM_PREFIX,BAM_PATH):
-    """[Submits jobs for filtering and sorting BAM files]
-
-    Args:
-        configFileDict ([dict]): [configuration file dictionary]
-        BAM_FILES ([lst]): [List containing the BAM files]
-
-    Returns:
-        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
-    """
-    BAM_FILTER_JID_LIST = []
-    for bam in BAM_PREFIX:
-        INPUT_FILE = "{}.bam".format(bam)
-        OUTPUT_FILE = "{}.QualTrimNoMt.bam".format(os.path.basename(bam))
-        print(OUTPUT_FILE)
-        
-        FILTER_CMD = "samtools view -h -F 1796 -q 20 | awk '{{if(\$3!~/chr[MT]/){{print}}}}' | samtools sort -O BAM -T prefix -o filename.NoDup.bam"
-        
-        
-        #FILTER_CMD = "{samtools} view {parameters} {bam_dir}/{file} | awk '{{if(\$3!~/chr[MT]/) {{print}}}}' | {samtools} sort -O BAM -T {sorted_bam_dir}/{output} -o {sorted_bam_dir}/{output}".format(samtools=configFileDict["samtools"], parameters=configFileDict['filter_bam'], bam_dir=BAM_PATH, file=INPUT_FILE, sorted_bam_dir=configFileDict["sorted_bam_dir"], output=OUTPUT_FILE)
-        print(FILTER_CMD)
-        if '2' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['sorted_bam_dir']), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
-        else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(configFileDict['sorted_bam_dir']), uid = configFileDict["uid"], cmd = FILTER_CMD)
-            
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        BAM_FILTER_JID_LIST.append(catchJID(out))
-    
-    FILTER_BAM_WAIT = ",".join(BAM_FILTER_JID_LIST)
-    del BAM_FILTER_JID_LIST
-    return FILTER_BAM_WAIT
-    
-
-
-def submitPCRduplication(configFileDict, BAM_FILES,BAM_PATH):
+def submitPCRduplication(configFileDict,BAM_FILES):
     """[Submits jobs for marking PCR duplicated reads using PICARD]
 
     Args:
@@ -98,18 +66,63 @@ def submitPCRduplication(configFileDict, BAM_FILES,BAM_PATH):
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
     """
     PCR_DUP_JID_LIST = []
-    for bam in BAM_FILES:
-        OUTPUT_FILE = bam.replace(".QualTrimNoMt.bam",".QualTrimNoMt.Picard.bam")
-        METRIX_FILE = bam.replace(".QualTrimNoMt.bam", "metrix")
-        
-        PCR_CMD = "{PICARD} MarkDuplicates I={input} O={output} M={metrix}".format(PICARD=configFileDict['PICARD'], input=bam, output=OUTPUT_FILE, metrix=METRIX_FILE)
-        if '3' in configFileDict['task_list']:
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['MAP_WAIT'])
+          
+    OUTPUT_DIR = configFileDict['marked_bam_dir']    
+    for bam in BAM_FILES: 
+        input = os.path.basename(bam).split(".")[0]
+        OUTPUT_FILE = "{}/{}.sortedByCoord.Picard.bam".format(OUTPUT_DIR,input)
+        print(OUTPUT_FILE)
+        METRIX_FILE = "{}/{}.metrix".format(OUTPUT_DIR,input)
+        print(METRIX_FILE)
+        PCR_CMD = "{PICARD} MarkDuplicates I={input} O={output} M={metrix}".format(PICARD=configFileDict['picard'], input=bam, output=OUTPUT_FILE, metrix=METRIX_FILE)
+        print(PCR_CMD)
+        if '2' in configFileDict['task_list']:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['MAP_WAIT'])
+            print(SLURM_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(BAM_PATH), uid = configFileDict["uid"], cmd = PCR_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD)
+        
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+        PCR_DUPLICATION_WAIT = PCR_DUP_JID_LIST.append(catchJID(out)) 
+    
     PCR_DUPLICATION_WAIT = ",".join(PCR_DUP_JID_LIST)
     del PCR_DUP_JID_LIST 
     return PCR_DUPLICATION_WAIT
+
+def submitFilteringBAM(configFileDict, BAM_FILES):
+    """[Submits jobs for filtering and sorting BAM files]
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        BAM_FILES ([lst]): [List containing the BAM files]
+
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """
+    BAM_FILTER_JID_LIST = []
+    OUTPUT_DIR = configFileDict['filtered_bam_dir']
+    for bam in BAM_FILES:
+        input_file = os.path.basename(bam).split(".")[0]
+        OUTPUT_FILE = "{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(OUTPUT_DIR, input_file)
+        
+        FILTER_CMD = "{samtools} view {arguments} -@ 4 {input} | awk '{{if(\$3!='chrM'){{print}}}}' | samtools view -b -o {output_file} -@ 4 && samtools index {output_file} -@ 4".format(samtools = configFileDict['samtools'], arguments=configFileDict['PCR_duplicates_removal'], input = bam, output_file = OUTPUT_FILE)
+        
+        
+        if '2' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
+            print(SLURM_CMD)
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD)
+            
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BAM_FILTER_JID_LIST.append(catchJID(out))
+    
+    FILTER_BAM_WAIT = ",".join(BAM_FILTER_JID_LIST)
+    del BAM_FILTER_JID_LIST
+    return FILTER_BAM_WAIT
+    
+
+
             
 
 def submitPCRremoval(configFileDict, BAM_PATH):

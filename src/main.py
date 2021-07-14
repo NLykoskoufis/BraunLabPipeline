@@ -146,7 +146,7 @@ if '1' in task_list:
     
     
     
-if '2' in task_list:
+if '2' in task_list: ## MAPs and sorts by coordinates
     # Arguments required here are -cf -raw -fastq -od
     if '1' not in task_list: 
         if not args.fastq_dir: 
@@ -154,25 +154,30 @@ if '2' in task_list:
         else:
             configFileDict['trimmed_fastq_dir'] = args.fastq_dir 
     
-    
     if args.output_dir:
         print("You specified an output directory. The mapped bam files will be saved in the specified directory and the mapper will not automatically create a bam directory under the raw directory specified")
         configFileDict['bam_dir'] = f"{args.output_dir}/bam"
+        configFileDict['sorted_bam_dir'] = f"{args.output_dir}/sorted_bam"
     else: 
         configFileDict['bam_dir'] = f"{args.raw_dir}/bam"
-    if checkDir(configFileDict['bam_dir']): 
+        configFileDict['sorted_bam_dir'] = f"{args.raw_dir}/sorted_bam"
+    if checkDir(configFileDict['bam_dir']) and checkDir(configFileDict['sorted_bam_dir']): 
         raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
     else: 
         createDir(configFileDict['bam_dir'])
         createLog(configFileDict['bam_dir'])
+        createDir(configFileDict['sorted_bam_dir'])
+        createLog(configFileDict['sorted_bam_dir'])
         
+        
+
 if '3' in task_list: ### PCR DUPLICATES MARK
     if '2' not in task_list: 
         if not args.bam_dir: 
             raise TypeError("ERROR. You need to specify a bam directory")
         else:
-            configFileDict['bam_dir'] = args.bam_dir
-    
+            configFileDict['sorted_bam_dir'] = args.bam_dir
+
     if args.output_dir: 
         print("You specified an output directory. The pipeline will therefore not create one.")
         configFileDict['marked_bam_dir'] = f"{args.output_dir}/marked_bam"
@@ -185,25 +190,25 @@ if '3' in task_list: ### PCR DUPLICATES MARK
         createLog(configFileDict['marked_bam_dir'])
     
     
-    
-            
+
 if '4' in task_list: ### FILTER/SORT/INDEX BAM FILES
     if '3' not in task_list:
         if not args.bam_dir: 
             raise TypeError("ERROR. You need to specify a bam directory")
         else: 
-            configFileDict['bam_dir'] = args.bam_dir 
+            configFileDict['marked_bam_dir'] = args.bam_dir 
     
     if args.output_dir: 
         print("You specified an output directory. The pipeline will therefore not create one.")
-        configFileDict['sorted_bam_dir'] = f"{args.output_dir}/sorted_bam"
+        configFileDict['filtered_bam_dir'] = f"{args.output_dir}/filtered_bam"
     else: 
-        configFileDict['sorted_bam_dir'] = f"{args.raw_dir}/sorted_bam"
-    if checkDir(configFileDict['sorted_bam_dir']): 
+        configFileDict['filtered_bam_dir'] = f"{args.raw_dir}/filtered_bam"
+    if checkDir(configFileDict['filtered_bam_dir']): 
         raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
     else: 
-        createDir(configFileDict['sorted_bam_dir'])
-        createLog(configFileDict['sorted_bam_dir'])    
+        createDir(configFileDict['filtered_bam_dir'])
+        createLog(configFileDict['filtered_bam_dir'])    
+        
 
 if '5' in task_list: ## CREATE BIGWIG
     if '4' not in task_list: 
@@ -285,7 +290,7 @@ if '8' in task_list:
 
 print(" * Starting\n")
 print(f" * Unique ID of this run: {str(configFileDict['uid'])}\n")
-
+print(task_list)
 
 # ===========================================================================================================
 STEP1 = "Trimming reads"
@@ -303,15 +308,18 @@ if '1' in task_list:
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
                
 # ===========================================================================================================
-STEP2 = "Mapping reads"
+STEP2 = "Mapping reads / sorting bam files"
 # ===========================================================================================================
                 
 if '2' in task_list: 
     print("Running mapping of reads.\n")
-    
-    FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
-    FASTQ_PATH=configFileDict['trimmed_fastq_dir']
-    
+    if '1' not in task_list:
+        FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
+        FASTQ_PATH=configFileDict['trimmed_fastq_dir']
+        configFileDict['sample_prefix'] = FASTQ_PREFIX
+    else:
+        FASTQ_PREFIX=getFastqPrefix(configFileDict['fastq_dir'])
+        FASTQ_PATH=configFileDict['fastq_dir']
     if configFileDict["mapper"] == "bowtie2":
         MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
         configFileDict['MAP_WAIT'] = MAP_WAIT                
@@ -320,35 +328,35 @@ if '2' in task_list:
 STEP3 = "Marking duplicated reads"
 # ===========================================================================================================
         
-if '4' in task_list: 
+if '3' in task_list:
     print(" * Running PCR duplication detection using PICARD\n")
-    PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict, BAM_FILES,BAM_PCR_PATH)
-    configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
+    if '1' in task_list or '2' in task_list:
+        BAM_FILES = ["{}/{}.sortedByCoord.bam".format(configFileDict['sorted_bam_dir'],i) for i in configFileDict['sample_prefix']]
+        print(BAM_FILES)
+        PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
+        configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
+    else:        
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['sorted_bam_dir']))
+        PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
+        configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
         
-           
 # ===========================================================================================================
 STEP4 = "Filtering reads"
 # ===========================================================================================================  
 
-if '3' in task_list: 
+if '4' in task_list: 
     print(" * Running filtering and sorting of BAM files\n")
-    if not args.sorted_bam_dir: 
-        sorted_bam_dir = f"{args.output_dir}/sorted_bam"
-        configFileDict['sorted_bam_dir'] = sorted_bam_dir 
-        createDir(sorted_bam_dir)
-        createLog(sorted_bam_dir)
     
-    if '2' not in task_list:    
-        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
-        BAM_PREFIX = [os.path.basename(i).replace(".bam","") for i in BAM_FILES]
-        print(BAM_PREFIX)
+    if '3' not in task_list:    
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['marked_bam_dir']))
+        FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
+        configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
     else:
-        BAM_PREFIX = FASTQ_PREFIX
-                
-    FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_PREFIX, configFileDict['bam_dir'])
-    configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
-
-                    
+        BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
+        FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
+        configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
+     
+    
 
 # ===========================================================================================================
 STEP7 = "BIG WIG files creation."
@@ -363,8 +371,6 @@ if '7' in task_list:
         createLog(bigwig_dir)
     BIGWIG_WAIT = submitBam2bw(configFileDict, BAM_BW)
     configFileDict['BIGWIG_WAIT'] = BIGWIG_WAIT
-
-
 
 
 # ===========================================================================================================
@@ -389,16 +395,3 @@ STEP9 = "Extend bed reads"
 if '9' in task_list:
     print(" * Running extension of reads in bed file")
     EXTEND_READS = submitExtendReads(configFileDict)
-
-
-
-
-
-
-'''
-
-
-
-
-
-
