@@ -11,4 +11,4 @@ awk -F '\t' -v ext=${EXTENSION} '{if($6=="+") {print $1,$2,$2+ext,ext,$5,$6} els
 
 ${BIN} ${OUTPUT}_temp.bed ${GENOMESIZEFILE} ${OUTPUT}
 
-#rm ${OUTPUT}_temp.bed
+rm ${OUTPUT}_temp.bed

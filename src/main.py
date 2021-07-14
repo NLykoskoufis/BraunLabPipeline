@@ -302,7 +302,7 @@ if '1' in task_list:
     fastq_dir = configFileDict['fastq_dir']
     FASTQ_FILES = getFastqPrefix(fastq_dir)
     print(FASTQ_FILES[0])
-    
+    configFileDict['trim_log_files'] = [] 
     configFileDict['sample_prefix'] = FASTQ_FILES
     TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
@@ -313,6 +313,7 @@ STEP2 = "Mapping reads / sorting bam files"
                 
 if '2' in task_list: 
     print("Running mapping of reads.\n")
+    configFileDict['mapping_log_files'] = []
     if '1' not in task_list:
         FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
         FASTQ_PATH=configFileDict['trimmed_fastq_dir']
@@ -330,6 +331,7 @@ STEP3 = "Marking duplicated reads"
         
 if '3' in task_list:
     print(" * Running PCR duplication detection using PICARD\n")
+    configFileDict['pcr_log_files'] = []
     if '1' in task_list or '2' in task_list:
         BAM_FILES = ["{}/{}.sortedByCoord.bam".format(configFileDict['sorted_bam_dir'],i) for i in configFileDict['sample_prefix']]
         print(BAM_FILES)
@@ -346,7 +348,7 @@ STEP4 = "Filtering reads and indexing bam file"
 
 if '4' in task_list: 
     print(" * Running filtering and sorting of BAM files\n")
-    
+    configFileDict['filtering_log_files'] = []
     if '3' not in task_list:    
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['marked_bam_dir']))
         FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
@@ -364,6 +366,7 @@ STEP5 = "BIG WIG files creation."
 
 if '5' in task_list: 
     print(" * Generating bigwig files for visualization")
+    configFileDict['bw_log_files'] = []
     if '4' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
         BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
@@ -380,10 +383,11 @@ STEP6 = "BAM 2 BED"
 
 if '6' in task_list: # Need to wait for '4' or none
     print (" * Running bam2bed")
+    configFileDict['bam2bed_log_files'] = []
     if '4' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
-        configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+        configFileDict['BAM2BW_WAIT'] = BAM2BED_WAIT
     else: 
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
@@ -397,6 +401,7 @@ STEP7 = "Extend bed reads"
 
 if '7' in task_list:
     print(" * Running extension of reads in bed file")
+    configFileDict['extend_log_files'] = []
     if '4' not in task_list:
         BED_FILES = glob.glob("{}/*.bed".format(configFileDict['bed_dir']))
         EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
@@ -414,6 +419,7 @@ STEP7 = "PEAK CALLING"
 
 if '8' in task_list: 
     print(" * Running peak calling\n")
+    configFileDict['peak_log_files'] = []
     if '6' not in task_list: 
         BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
         PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)

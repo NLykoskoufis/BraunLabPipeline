@@ -93,6 +93,9 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #extendReads script 
 extendReadsScript,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/extendBedReads.sh
 
+#bam2bed script 
+bam2bed_script,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/bam2bed.sh
+
 #path to python 3.2
 python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
 
