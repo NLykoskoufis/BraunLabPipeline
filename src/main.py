@@ -53,15 +53,14 @@ ATACseq pipeline for mapping, peak calling, etc
 ###### STEPS PERFORMED BY PIPELINE ######
 
 1. TRIM reads
-2. MAP reads to reference genome ==> Wait for 1 is 1 is needed to run
-3. FILTER unmapped, low QUAL and chrM + sortBAM ==> WAIT FOR 2
-4. Mark PCR duplicates ==> WAIT FOR 3
-5. REMOVE PCR duplicates, vendor QUAL control and secondary alignment ==> WAIT FOR 4
-6. INDEX BAM ==> WAIT FOR 5
-7. CREATE .bw for visualization <INDEPENDENT STEP FROM 8,9,10> => ONLY NEED TO WAIT FOR 6 TO BE DONE. 
-8. CONVERT bam2bed ==> Wait for 6 to be done
-9. Bed file with extended reads ==> Wait for 8
-10. PEAK Calling ==> Wait for 9
+2. MAP reads to reference genome & SORT ==> Wait for 1 is 1 is needed to run
+3. Mark PCR duplicates ==> WAIT FOR 2
+4. REMOVE PCR duplicates, vendor QUAL control and secondary alignment and INDEX ==> WAIT FOR 3
+4.1 Create Fragment Size Distribution plots
+5. CREATE .bw for visualization <INDEPENDENT STEP FROM 8,9,10> => ONLY NEED TO WAIT FOR 6 TO BE DONE. 
+6. CONVERT bam2bed ==> Wait for 6 to be done
+7. Bed file with extended reads ==> Wait for 8
+8. PEAK Calling ==> Wait for 9
 #===============================================================================
 """
 
@@ -95,17 +94,6 @@ parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='
 #Get command line args
 args = parser.parse_args()
 
-
-#get list of tasks
-if not args.task:
-    sys.stderr.write('ERROR: You must give task(s) to run : arg -t\n')
-    sys.exit(1)
-task_list = args.task
-task_list.append("last")
-if 'all' in task_list:
-    task_list = ['1','2','3','4','4.1','5','6','7','8']
-    task_list.append("last")
-    
 if not args.config_file_path:
     sys.stderr.write('ERROR: You must provide a configuration file to run the pipeline : arg -cf\n')
     sys.exit(1)
@@ -114,6 +102,34 @@ elif not os.path.exists(args.config_file_path):
     sys.exit(1)
 else:
     configFileDict = getConfigDict(args.config_file_path) # Create dictionay containing all important information for the pipeline to work. 
+
+#get list of tasks
+
+if not args.task:
+    sys.stderr.write('ERROR: You must give task(s) to run : arg -t\n')
+    sys.exit(1)
+task_list = args.task
+if configFileDict['technology'] == "ATACseq":
+    if 'all' in task_list:
+        task_list = ['1','2','3','4','4.1','5','6','7','8']
+elif configFileDict['technology'] == "ChIPSeq":
+    if 'all' in task_list: 
+        task_list = ['1','2','3','4','4.1','5','6','7','8'] # TO BE CONFIRMED
+elif configFileDict['technology'] == "RNAseq":
+    if 'all' in task_list: 
+        task_list = ['2','4','9']
+    if '3' or '4' in task_list: 
+        print("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
+    if '8' in task_list:
+        sys.stderr("ERROR. You cannot call peaks from RNAseq data.")
+    if '5' in task_list or '6' in task_list or '7' in task_list:
+        print("WARNING! These are not RNAseq data specific steps.")
+else: 
+    sys.stderr("ERROR. The pipeline can only process ATACseq, ChIPseq or RNAseq data. PLease specify one of them in the configuration file")
+
+task_list.append("last")
+    
+
 
 if not args.raw_dir: 
     raise TypeError("ERROR. You need to specify a raw directory for the pipeline to work")
@@ -295,7 +311,8 @@ if '7' in task_list:
     else: 
         createDir(configFileDict['extended_bed_dir'])
         createLog(configFileDict['extended_bed_dir'])
-        
+
+
 if '8' in task_list:
     if configFileDict['technology'] == "ATACseq": 
         if '7' not in task_list: 
@@ -430,6 +447,8 @@ if '5' in task_list:
         BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
         configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
     submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
+    
+
 # ===========================================================================================================
 STEP6 = "BAM 2 BED"
 # ===========================================================================================================   

@@ -19,17 +19,19 @@ genomeFileSize,/home/users/l/lykoskou/Software/bedtools2/genomes/mouse.mm10.geno
 
 
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
-pairend,1
+#pairend,1
 
 # Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
 technology,ATACseq
-
 
 #Trim reads using cutadapt
 #Example of how a cutadapt commands looks like 
 #cutadapt -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 -o testFile_R1_001.trim.fastq.gz -p testFile_R2_001.trim.fastq.gz testFile_R1_001.fastq.gz testFile_R2_001.fastq.gz
 #If you want to modify the parameters used, you can comment the line below, and add what you want. 
 trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 
+
+
+
 
 #Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
 mapper,bowtie2
@@ -42,7 +44,6 @@ bowtie_parameters, -p 8 --maxins 2000 -N 1
 #Filter and sort BAM
 #samtools view -h ${file}.bam  | grep -v chrM | samtools view -b -h -F 4 -q 20 | samtools sort -O BAM -T ${file} > testFile.QualTrimNoMt.bam
 filter_bam, -b -h -F 4 -q 20 
-
 
 
 #PCR duplicates. This is step XX. If you have selected it, the following command will be executed. No parameters or anything to add here. This command does not change.
@@ -59,7 +60,7 @@ bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn C
 bam2bed, 1
 
 #Extend reads. Default extension is 150 but you can change the value. This step runs a bash script to extend reads.
-extend_reads, 150
+extend_reads,150
 
 #Peak calling with MACS2
 #Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
