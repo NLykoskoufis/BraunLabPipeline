@@ -269,3 +269,38 @@ def submitPeakCalling(configFileDict,BED_FILES):
     PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
     del PEAK_CALLING_JID_LIST
     return PEAK_CALLING_WAIT
+
+
+
+
+def submitJobCheck(configFileDict, log_key, wait_key):
+    log_files = configFileDict[log_key]
+    for file in log_files: 
+        cmd = "python3 {jobCheck} {file}".format(jobCheck=configFileDict['jobCheck'], file=file)
+        SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+
+
+def submitATACseqQC(configFileDict, BAM_FILES):
+    ATACQC_JID_LIST = []
+    OUTPUT_DIR = configFileDict['atacQC_dir']
+    for bam in BAM_FILES:
+        input_file = os.path.basename(bam).split(".")[0]
+        
+        ATACQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['ATACseqQC'],input = bam,output_dir = OUTPUT_DIR) 
+        
+        if '4' in configFileDict['task_list']:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = ATACQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            print(SLURM_CMD)
+        else:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = ATACQC_CMD)
+            print(SLURM_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        ATACQC_JID_LIST.append(catchJID(out))
+
+        configFileDict['atacQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["atacQC_dir"]),configFileDict['uid'],out))
+        
+        
+    ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
+    del ATACQC_JID_LIST
+    return ATACQC_WAIT
