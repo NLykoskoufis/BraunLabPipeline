@@ -30,14 +30,7 @@ python3 main.py --help
 #  -fastq FASTQ_DIR, -fastqdir FASTQ_DIR
 #                        Absolut path fastq to diretor(y)ies. If multiple
 #                        directories, separate eache path with space
-#  -trimfastq TRIMMED_FASTQ_DIR, -trimfastqdir TRIMMED_FASTQ_DIR
-#                        Absolut path trimmed fastq to diretor(y)ies. If
-#                        multiple directories, separate eache path with space
 #  -bam BAM_DIR, -bamdir BAM_DIR
-#                        Path bam diretory, is multiple, separate with space.
-#  -sortedBam SORTED_BAM_DIR
-#                        Path to sorted bam directory, if not set, first bam
-#                        directory is used.
 #  -eqd EQ_DIR, -quantification_dir EQ_DIR
 #                        Absolut path peak calling diretory
 #  -bed BED_DIR, -bed BED_DIR
@@ -47,10 +40,6 @@ python3 main.py --help
 #  -od OUTPUT_DIR, -outputdir OUTPUT_DIR
 #                        Path to output directory
 #  -cf CONFIG_FILE_PATH  Name of your configuration file: project_run_config_V1
-#  -tf                   True if you want to do a backup of fastq files. '-rn'
-#                        and '-pn' options are mandatory to do a backup.
-#  -tb                   True if you want to do a backup of bam files. '-rn'
-#                        and '-pn' options are mandatory to do a backup.
 #  -t TASK [TASK ...]
 ```
 The different arguments of the pipeline are: 
@@ -61,9 +50,7 @@ The different arguments of the pipeline are:
 | **-raw** | Absolute path to the raw directory |
 | -od | Absolute path to the output directory | 
 | -fastq | Abolute path to the fastq directory | 
-| -trimfastq | Absolute path to the trimmed fastq directory | 
 | -bam | Absolute path to the bam directory | 
-| -sortedBam | Absolute path to the sortedBam directory | 
 | -eqd | Absolute path to the quantification directory | 
 | -bed | Absolute path to the bed directory | 
 | -bw | Absolute path to the bigwid directory | 
@@ -71,7 +58,15 @@ The different arguments of the pipeline are:
 
 The arguments in bold are required for the pipeline no matter whether you run all the steps or specific steps. 
 The arguments that you specify really depend on the steps you wan to run. 
-Below you will find the required arguments depending on the steps you run. 
+
+The pipeline can process ATACseq, ChIPseq and RNAseq data. You need to specify the technology in the configuration file. If you want to run all tasks, then the pipeline will know which steps to run. 
+Each technology has its own specific steps. 
+
+ATACseq: 1, 2, 3, 4, 4.1, 5, 6, 7, 8
+ChIPseq: 1, 2, 3, 4, 5, 6, 7, 8
+RNAseq: 2,4,9
+
+
 
 ##Steps of the pipeline 
 
