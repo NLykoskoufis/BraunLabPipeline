@@ -16,7 +16,7 @@ sys.path.append(pipeline_tools_path)
 from writeEmail import writeEmail
 from configParser import getConfigDict
 from fastqTools import getFastqPrefix
-from slurmTools import catchJID
+from slurmTools import *
 from dirCheck import * 
 from submitSteps import *
 
@@ -88,9 +88,11 @@ if not args.task:
     sys.stderr.write('ERROR: You must give task(s) to run : arg -t\n')
     sys.exit(1)
 task_list = args.task
+task_list.append("last")
 if 'all' in task_list:
     task_list = ['1','2','3','4','5','6','7','8']
-
+    task_list.append("last")
+    
 if not args.config_file_path:
     sys.stderr.write('ERROR: You must provide a configuration file to run the pipeline : arg -cf\n')
     sys.exit(1)
@@ -292,6 +294,7 @@ print(" * Starting\n")
 print(f" * Unique ID of this run: {str(configFileDict['uid'])}\n")
 print(task_list)
 
+log_list = []
 # ===========================================================================================================
 STEP1 = "Trimming reads"
 # ===========================================================================================================
@@ -306,7 +309,8 @@ if '1' in task_list:
     configFileDict['sample_prefix'] = FASTQ_FILES
     TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
-               
+    log_list.append('trim_log_files')
+    submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
 # ===========================================================================================================
 STEP2 = "Mapping reads / sorting bam files"
 # ===========================================================================================================
@@ -324,7 +328,9 @@ if '2' in task_list:
     if configFileDict["mapper"] == "bowtie2":
         MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
         configFileDict['MAP_WAIT'] = MAP_WAIT                
-
+    log_list.append('mapping_log_files')
+    submitJobCheck(configFileDict,'mapping_log_files',MAP_WAIT)
+    
 # ===========================================================================================================
 STEP3 = "Marking duplicated reads"
 # ===========================================================================================================
@@ -341,7 +347,9 @@ if '3' in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['sorted_bam_dir']))
         PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
         configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
-        
+    log_list.append('pcr_log_files')
+    submitJobCheck(configFileDict,'pcr_log_files',PCR_DUPLICATION_WAIT)
+
 # ===========================================================================================================
 STEP4 = "Filtering reads and indexing bam file"
 # ===========================================================================================================  
@@ -357,7 +365,8 @@ if '4' in task_list:
         BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
         FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
         configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
-     
+    log_list.append('filtering_log_files') 
+    submitJobCheck(configFileDict,'filtering_log_files',FILTER_BAM_WAIT)
     
 
 # ===========================================================================================================
@@ -375,8 +384,8 @@ if '5' in task_list:
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
         configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
-
-
+    log_list.append('bw_log_files')
+    submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
 # ===========================================================================================================
 STEP6 = "BAM 2 BED"
 # ===========================================================================================================   
@@ -392,8 +401,8 @@ if '6' in task_list: # Need to wait for '4' or none
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
         configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
-    
-
+    log_list.append('bam2bed_log_files')
+    submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
 
 # ===========================================================================================================
 STEP7 = "Extend bed reads"
@@ -410,9 +419,8 @@ if '7' in task_list:
         BED_FILES = ["{}/{}.bed".format(configFileDict['bed_dir'], i) for i in configFileDict['sample_prefix']]
         EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
         configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
-        
-        
-
+    log_list.append('extend_log_files')    
+    submitJobCheck(configFileDict,'extend_log_files',EXT_BED_WAIT)   
 # ===========================================================================================================
 STEP7 = "PEAK CALLING"
 # ===========================================================================================================
@@ -428,4 +436,5 @@ if '8' in task_list:
         BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
         PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
         configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
-        
+    log_list.append('peak_log_files')
+    submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
