@@ -90,6 +90,9 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #In each lane, the first word is a keyword that should not be changed, the second part after
 #the comma is the path to the corresponding executable.
 
+#mail_script 
+mail_script, ,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/sendEmail.py
+
 
 #extendReads script 
 extendReadsScript,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/extendBedReads.sh

@@ -277,7 +277,7 @@ def submitJobCheck(configFileDict, log_key, wait_key):
     log_files = configFileDict[log_key]
     for file in log_files: 
         cmd = "python3 {jobCheck} {file}".format(jobCheck=configFileDict['jobCheck'], file=file)
-        SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key)
+        SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 
 
@@ -304,7 +304,6 @@ def submitATACseqQC(configFileDict, BAM_FILES):
     ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
     del ATACQC_JID_LIST
     return ATACQC_WAIT
-
 
 def submitFastQC(configFileDict):
     FASTQC_JID_LIST = []
@@ -333,3 +332,20 @@ def submitFastQC(configFileDict):
     FASTQC_WAIT = ",".join(FASTQC_JID_LIST)
     del FASTQC_JID_LIST
     return FASTQC_WAIT
+
+def submitMultiQC(configFileDict):
+    MFASTQC_JID_LIST = []
+    INPUT_DIR = configFileDict['fastQC_dir']
+    OUTPUT_DIR = INPUT_DIR
+    cmd = "{multiqc} -o {output_dir} {input_dir}".format(multiqc = configFileDict['multiQC'],output_dir = OUTPUT_DIR, input_dir = INPUT_DIR)
+    SLURM_CMD = SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['FASTQC_WAIT'], cmd = cmd)
+    print(SLURM_CMD)
+    
+    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+    MFASTQC_JID_LIST.append(catchJID(out))
+            
+    configFileDict['multiqc_log_files'].append(getSlurmLog("{}/log".format(configFileDict["fastQC_dir"]),configFileDict['uid'],out))
+    
+    MFASTQC_WAIT = ",".join(MFASTQC_JID_LIST)
+    del MFASTQC_JID_LIST
+    return MFASTQC_WAIT

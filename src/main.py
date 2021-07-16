@@ -8,6 +8,7 @@ import argparse
 from collections import defaultdict
 import uuid
 import glob
+from datetime import datetime
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -111,10 +112,10 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','2','3','4','4.1','5','6','7','8']
+        task_list = ['1','1.1','2','3','4','4.1','5','6','7','8']
 elif configFileDict['technology'] == "ChIPSeq":
     if 'all' in task_list: 
-        task_list = ['1','2','3','4','4.1','5','6','7','8'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.1','5','6','7','8'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
         task_list = ['2','4','9']
@@ -134,12 +135,13 @@ if not args.raw_dir:
     raise TypeError("ERROR. You need to specify a raw directory for the pipeline to work")
 else: 
     configFileDict['raw_dir'] = args.raw_dir
+    configFileDict['raw_log'] = f"{args.raw_dir}/log"
 
 if args.raw_dir and not args.output_dir: 
     print("The raw directory is also the output directory")
 if args.raw_dir and args.output_dir: 
     print("Results will be written in the output directory specified and not the raw directory")
-
+    configFileDict['raw_log'] = f"{args.output_dir}/log"
 if args.raw_dir == args.output_dir:
     raise TypeError("ERROR. The raw directory and output directories are the same. Either specify a different output directory than the raw directory or do not specify at all.")
 
@@ -156,7 +158,11 @@ configFileDict['task_list'] = task_list
 STEP1 = "CHECKING STEPS AND ADDING DIRECTORIES IN DICTIONARY AND CREATING THEM"
 # ===========================================================================================================
 
-
+#Create raw log directory
+if checkDir(configFileDict['raw_log']):
+    raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+else: 
+    createDir(configFileDict['raw_log'])
 
 
 if '1' in task_list: 
@@ -199,9 +205,6 @@ if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
 
 
 
-
-            
-    
     
     
 if '2' in task_list: ## MAPs and sorts by coordinates
@@ -342,7 +345,7 @@ if '7' in task_list:
 
 
 if '8' in task_list:
-    if configFileDict['technology'] == "ATACseq": 
+    if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": 
         if '7' not in task_list: 
             if not args.bed_dir: 
                 raise TypeError("You need to specify a bed directory")
@@ -358,6 +361,10 @@ if '8' in task_list:
         else: 
             createDir(configFileDict['peaks_dir'])
             createLog(configFileDict['peaks_dir'])
+    elif configFileDict['technology'] == "RNAseq":
+        print("WORK IN PROGRESS")
+    else: 
+        raise SystemError("You need to specify a technology, either ATACseq, ChIPseq or RNAseq")
 
 
 ########################
@@ -399,6 +406,12 @@ if '1.1' in task_list:
     configFileDict['FASTQC_WAIT'] = FASTQC_WAIT
     submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
     task_dico['1.1'] = "FASTQC_WAIT"
+    
+    print(" * Running multiqc to get all FastQC in a single report\n")
+    configFileDict['multiqc_log_files'] = []
+    MFASTQC_WAIT = submitMultiQC(configFileDict)
+    submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)
+    
     
 
 
@@ -493,7 +506,7 @@ if '5' in task_list:
         BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
         configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
     submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
-    task_dico[5] = "BAM2BW_WAIT"
+    task_dico['5'] = "BAM2BW_WAIT"
 
 # ===========================================================================================================
 STEP6 = "BAM 2 BED"
@@ -548,8 +561,40 @@ if '8' in task_list:
     submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
     task_dico["8"] = "PEAK_CALLING_WAIT"
 
+
+
+
+
+
 ########################
 ##### MAIL REPORT ######
 ########################
 
-### Find out which is the last task ran. 
+### Mail start of pipeline 
+subject = "Pipeline started"
+pipeline_start = datetime.now()
+dt_string = pipeline_start.strftime("%d/%m/%Y %H:%M:%S")
+steps = ",".join(configFileDict['task_list'])
+addresses = [configFileDict['contact_email']]
+
+if not args.output_dir:
+    msg = "The pipeline started at {time}. All results will be written under {raw_dir}.\nThe steps that will be run are {steps}.".format(raw_dir = configFileDict['raw_dir'],time=dt_string, steps=steps, uid = configFileDict['uid'])
+else:
+    msg = "The pipeline started {time}. All results will be written under {raw_dir}.\nThe unique identifier of the pipeline run is: {uid}\nThe steps that will be run are {steps}.".format(raw_dir = configFileDict['output_dir'],steps=steps, uid=configFileDict['uid'],time=dt_string)
+
+writeEmail(addresses,subject,msg)
+
+# Mail that pipeline ended # 
+wait_condition = []
+for t in task_list: 
+    wait_condition.append(configFileDict[task_dico[t]])
+    
+wait_condition = ",".join(wait_condition)
+if not args.output_dir:
+    msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['raw_dir'], steps=steps, uid = configFileDict['uid'])
+else:
+    msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['output_dir'], steps=steps, uid = configFileDict['uid'])
+
+DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}'".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses))
+SLURM_CMD = "{wsbatch} -o {raw_log}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], raw_log = configFileDict['raw_log'], uid = configFileDict['uid'],JID = wait_condition, cmd = DONE_CMD)
+out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)

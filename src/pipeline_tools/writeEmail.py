@@ -2,7 +2,7 @@
 
 import os
 from os import path, access, system
-from sys import stderr
+from sys import stderr, argv
 import smtplib
 from email.mime.text import MIMEText
 
@@ -30,3 +30,4 @@ def writeEmail(addresses, subject, msg):
         smtpObj.quit()
     except smtplib.SMTPException:
         stderr.write('Error, unable to send mail')
+
