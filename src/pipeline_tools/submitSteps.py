@@ -304,3 +304,32 @@ def submitATACseqQC(configFileDict, BAM_FILES):
     ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
     del ATACQC_JID_LIST
     return ATACQC_WAIT
+
+
+def submitFastQC(configFileDict):
+    FASTQC_JID_LIST = []
+    OUTPUT_DIR = configFileDict['fastQC_dir']
+    if '1' in configFileDict['task_list']: 
+        DIRECTORIES = [configFileDict['fastq_dir'], configFileDict['trimmed_fastq_dir']]
+    else:
+        DIRECTORIES = [configFileDict['fastq_dir']]
+    
+    for DIR in DIRECTORIES:
+        fastq_files = glob.glob(f"{DIR}/*fastq.gz")
+        for fastq in fastq_files:
+        
+            FASTQC_CMD = "{fastqc} -o {output_dir} {fastq}".format(fastqc = configFileDict['FastQC'], output_dir = OUTPUT_DIR, fastq = fastq)
+            if '1' in configFileDict['task_list']:
+                SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['TRIM_WAIT'], cmd = FASTQC_CMD)
+                print(SLURM_CMD)
+            else: 
+                SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'], cmd = FASTQC_CMD)
+                print(SLURM_CMD)
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            FASTQC_JID_LIST.append(catchJID(out))
+            
+            configFileDict['fastqQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["fastQC_dir"]),configFileDict['uid'],out))
+        
+    FASTQC_WAIT = ",".join(FASTQC_JID_LIST)
+    del FASTQC_JID_LIST
+    return FASTQC_WAIT

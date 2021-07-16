@@ -175,6 +175,32 @@ if '1' in task_list:
     else: 
         createDir(configFileDict['trimmed_fastq_dir'])
         createLog(configFileDict['trimmed_fastq_dir'])
+
+
+if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
+    if not args.fastq_dir:
+        raise TypeError("ERROR. you need to specify a fastq directory.")
+    else: 
+        if '1' in task_list: 
+            print("Will run FastQC on raw and trimmed fastq files")
+        else: 
+            configFileDict['fastq_dir'] = args.fastq_dir
+    
+    if args.output_dir:
+        print("You specified an output directory.")
+        configFileDict['fastQC_dir'] = f"{args.output_dir}/fastQC"
+    else: 
+        configFileDict['fastQC_dir'] = f"{args.raw_dir}/fastQC"
+    if checkDir(configFileDict['fastQC_dir']): 
+        raise FileExistsError("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['fastQC_dir'])
+        createLog(configFileDict['fastQC_dir'])
+
+
+
+
+            
     
     
     
@@ -343,6 +369,9 @@ print(f" * Unique ID of this run: {str(configFileDict['uid'])}\n")
 print(task_list)
 task_dico = {} ### Dictionary containing for each task the wait_key so that I can automatically find out which is the last run task and get the wait_key instead of checking all of them one by one with if statements.
 
+
+
+
 # ===========================================================================================================
 STEP1 = "Trimming reads"
 # ===========================================================================================================
@@ -359,7 +388,22 @@ if '1' in task_list:
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
     submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
     task_dico['1'] = "TRIM_WAIT"
+
 # ===========================================================================================================
+STEP1_1 = "FASTQC"
+# ===========================================================================================================
+if '1.1' in task_list: 
+    print(" * Running QC of fastq files")
+    configFileDict['fastqQC_log_files'] = []
+    FASTQC_WAIT = submitFastQC(configFileDict)
+    configFileDict['FASTQC_WAIT'] = FASTQC_WAIT
+    submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
+    task_dico['1.1'] = "FASTQC_WAIT"
+    
+
+
+
+#  ===========================================================================================================
 STEP2 = "Mapping reads / sorting bam files"
 # ===========================================================================================================
                 
@@ -509,6 +553,3 @@ if '8' in task_list:
 ########################
 
 ### Find out which is the last task ran. 
-last_task = task_list[-1]
-wait_key = task_dico[last_task]
-print(f"last step was {last_task}")
