@@ -100,6 +100,9 @@ extendReadsScript,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeli
 #ATACseqQC
 ATACseqQC,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/fragmentSizeDist.R
 
+#bamQC,
+bamQC,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/atacQC_stats.R
+
 #bam2bed script 
 bam2bed_script,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/bam2bed.sh
 

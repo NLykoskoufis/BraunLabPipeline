@@ -305,6 +305,37 @@ def submitATACseqQC(configFileDict, BAM_FILES):
     del ATACQC_JID_LIST
     return ATACQC_WAIT
 
+
+
+
+def submitBamQC(configFileDict, BAM_FILES):
+    BAMQC_JID_LIST = []
+    OUTPUT_DIR = configFileDict['atacQC_dir']
+    for bam in BAM_FILES:
+        input_file = os.path.basename(bam).split(".")[0]
+        output_file = f"{OUTPUT_DIR}/{input_file}_bamQC.stats"
+        
+        BAMQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['bamQC'],input = bam,output_dir = output_file) 
+        
+        if '4' in configFileDict['task_list']:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            print(SLURM_CMD)
+        else:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD)
+            print(SLURM_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BAMQC_JID_LIST.append(catchJID(out))
+
+        configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["atacQC_dir"]),configFileDict['uid'],out))
+        
+        
+    BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
+    del BAMQC_JID_LIST
+    return BAMQC_WAIT
+
+
+
+
 def submitFastQC(configFileDict):
     FASTQC_JID_LIST = []
     OUTPUT_DIR = configFileDict['fastQC_dir']
@@ -349,3 +380,4 @@ def submitMultiQC(configFileDict):
     MFASTQC_WAIT = ",".join(MFASTQC_JID_LIST)
     del MFASTQC_JID_LIST
     return MFASTQC_WAIT
+

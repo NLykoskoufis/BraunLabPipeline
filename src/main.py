@@ -112,10 +112,10 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','1.1','2','3','4','4.1','5','6','7','8']
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8']
 elif configFileDict['technology'] == "ChIPSeq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4','4.1','5','6','7','8'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.1', '4.2', '5','6','7','8'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
         task_list = ['2','4','9']
@@ -271,7 +271,7 @@ if '4' in task_list: ### FILTER/SORT/INDEX BAM FILES
         createLog(configFileDict['filtered_bam_dir'])    
 
 
-if '4.1' in task_list: # Create fragment Size distribution plots. 
+if '4.1' in task_list or '4.2' in task_list: # Create fragment Size distribution plots. 
     if '4' not in task_list: 
         if not args.bam_dir: 
             raise TypeError("You need to specify a bam directory.")
@@ -488,6 +488,26 @@ if '4.1' in task_list:
         configFileDict['ATACQC_WAIT'] = ATACQC_WAIT
     submitJobCheck(configFileDict,'atacQC_log_files',ATACQC_WAIT)
     task_dico['4.1'] = "ATACQC_WAIT"
+
+
+# ===========================================================================================================
+STEP4_2 = "QC STEP: bamQC"
+# ===========================================================================================================
+
+if '4.2' in task_list:
+    print(" * Generating bamQC stats")
+    configFileDict['bamQC_log_files'] = []
+    if '4' not in task_list:
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
+        BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
+        configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
+    else: 
+        BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+        BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
+        configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
+    submitJobCheck(configFileDict,'bamQC_log_files',BAMQC_WAIT)
+    task_dico['4.2'] = "BAMQC_WAIT"
+
 
 
 # ===========================================================================================================
