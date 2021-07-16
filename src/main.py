@@ -127,7 +127,6 @@ elif configFileDict['technology'] == "RNAseq":
 else: 
     sys.stderr("ERROR. The pipeline can only process ATACseq, ChIPseq or RNAseq data. PLease specify one of them in the configuration file")
 
-task_list.append("last")
     
 
 
@@ -156,6 +155,9 @@ configFileDict['task_list'] = task_list
 # ===========================================================================================================
 STEP1 = "CHECKING STEPS AND ADDING DIRECTORIES IN DICTIONARY AND CREATING THEM"
 # ===========================================================================================================
+
+
+
 
 if '1' in task_list: 
     if not args.fastq_dir:
@@ -339,7 +341,7 @@ if '8' in task_list:
 print(" * Starting\n")
 print(f" * Unique ID of this run: {str(configFileDict['uid'])}\n")
 print(task_list)
-
+task_dico = {} ### Dictionary containing for each task the wait_key so that I can automatically find out which is the last run task and get the wait_key instead of checking all of them one by one with if statements.
 
 # ===========================================================================================================
 STEP1 = "Trimming reads"
@@ -356,7 +358,7 @@ if '1' in task_list:
     TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
     submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
-    
+    task_dico['1'] = "TRIM_WAIT"
 # ===========================================================================================================
 STEP2 = "Mapping reads / sorting bam files"
 # ===========================================================================================================
@@ -375,7 +377,7 @@ if '2' in task_list:
         MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
         configFileDict['MAP_WAIT'] = MAP_WAIT                
     submitJobCheck(configFileDict,'mapping_log_files',MAP_WAIT)
-    
+    task_dico['2'] = "MAP_WAIT"
 # ===========================================================================================================
 STEP3 = "Marking duplicated reads"
 # ===========================================================================================================
@@ -393,7 +395,7 @@ if '3' in task_list:
         PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
         configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
     submitJobCheck(configFileDict,'pcr_log_files',PCR_DUPLICATION_WAIT)
-
+    task_dico['3'] = "PCR_DUPLICATION_WAIT"
 # ===========================================================================================================
 STEP4 = "Filtering reads and indexing bam file"
 # ===========================================================================================================  
@@ -410,7 +412,7 @@ if '4' in task_list:
         FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
         configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
     submitJobCheck(configFileDict,'filtering_log_files',FILTER_BAM_WAIT)
-
+    task_dico['4'] = "FILTER_BAM_WAIT"
 
 # ===========================================================================================================
 STEP4_1 = "FragmentSizeDist plot. QC STEP"
@@ -428,7 +430,7 @@ if '4.1' in task_list:
         ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES)
         configFileDict['ATACQC_WAIT'] = ATACQC_WAIT
     submitJobCheck(configFileDict,'atacQC_log_files',ATACQC_WAIT)
- 
+    task_dico['4.1'] = "ATACQC_WAIT"
 
 
 # ===========================================================================================================
@@ -447,7 +449,7 @@ if '5' in task_list:
         BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
         configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
     submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
-    
+    task_dico[5] = "BAM2BW_WAIT"
 
 # ===========================================================================================================
 STEP6 = "BAM 2 BED"
@@ -465,7 +467,7 @@ if '6' in task_list: # Need to wait for '4' or none
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
         configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
     submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
-
+    task_dico['6'] = "BAM2BED_WAIT"
 # ===========================================================================================================
 STEP7 = "Extend bed reads"
 # ===========================================================================================================   
@@ -482,6 +484,8 @@ if '7' in task_list:
         EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
         configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
     submitJobCheck(configFileDict,'extend_log_files',EXT_BED_WAIT)   
+    task_dico["7"] = "EXT_BED_WAIT"
+    
 # ===========================================================================================================
 STEP8 = "PEAK CALLING"
 # ===========================================================================================================
@@ -498,8 +502,13 @@ if '8' in task_list:
         PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
         configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
     submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
+    task_dico["8"] = "PEAK_CALLING_WAIT"
 
+########################
+##### MAIL REPORT ######
+########################
 
-
-
-
+### Find out which is the last task ran. 
+last_task = task_list[-1]
+wait_key = task_dico[last_task]
+print(f"last step was {last_task}")
