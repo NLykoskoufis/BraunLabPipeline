@@ -62,18 +62,17 @@ bowtie_parameters, -p 8 --maxins 2000 -N 1
 
 
 
-
-
-
 #PCR duplicates. This is step XX. If you have selected it, the following command will be executed. No parameters or anything to add here. This command does not change.
 #Example: java -Xmx8g -jar $PICARD MarkDuplicates I=${file}.QualTrimNoMt.bam O=${file}.QualTrimNoMt.Picard.bam M=${file}.metrix
 
 #Filter duplicates.
 #Example: samtools view -b -h -F 1796 -20 testFile.QualTrimNoMt.Picard.bam > testFile.NoDup.bam
+#PCR_duplicates_removal,-h -F 3844 -q20
+
 PCR_duplicates_removal,-h -F 1796 -q20
 
-
 #Deeptools to create normalized .bw files 
+#bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max --extendReads 200
 bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
 
 #Bam2Bed Convert bam 2 bed file. 1--> YES; 0--> NO

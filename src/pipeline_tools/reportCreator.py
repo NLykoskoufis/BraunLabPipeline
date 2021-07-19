@@ -15,7 +15,7 @@ sys.path.append(pipeline_tools_path)
 sys.path.append(utils_tools_path)
 sys.path.append(pipeline_path)
 
-from main import getConfigFileDict, getTaskDico
+
 from verbose import verbose as vrb
 from jobCheck import * 
 from Logger import Log
@@ -57,23 +57,30 @@ def copyPlot(configFileDict, task_dico):
         cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=",".join(samples_plots))
     return cp_plots 
 
+
+
+
 def getAllExitCodesPerTask(configFileDict,task_dico):
-    
-    
     dico = defaultdict(dict)
     for task in configFileDict['task_list']:
         vrb.bullet("Checking Exit Codes of task: "+task)
-        ogFiles = configFileDict[task_dico[task]]
+        logFiles = configFileDict[task_dico[task]]
         for file in logFiles:
-            dico[task][file][check_exitCodes(file)]
+            dico[task][file] = check_exitCodes(file)
     return dico 
 
-            
-def main(reportName):
-    configFileDict = getConfigFileDict()
-    task_dico = getTaskDico()
-    configFileDict = json.loads(configFileDict)
-    task_dico = json.loads(task_dico)
+def readDictFromFile(dico):
+    f = open(dico)
+    
+    dict = json.load(f)
+    return dict
+    
+
+
+def main(configFileDict_file, task_dico_file, reportName):
+    configFileDict = readDictFromFile(configFileDict_file)
+    task_dico = readDictFromFile(task_dico_file)
+    
     
     TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling"}
     

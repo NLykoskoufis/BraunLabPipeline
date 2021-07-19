@@ -1,5 +1,5 @@
 #!/usr/bin/env python3 
-
+from __future__ import print_function
 import subprocess
 import sys 
 import os 
@@ -18,7 +18,7 @@ utils_tools_path = os.path.abspath(pipeline_path+"/utils")
 sys.path.append(pipeline_tools_path)
 sys.path.append(utils_tools_path)
 from writeEmail import writeEmail
-from configParser import getConfigDict
+from configParser import getConfigDict, dict2File
 from fastqTools import getFastqPrefix
 from slurmTools import *
 from dirCheck import * 
@@ -617,16 +617,28 @@ REPORT = "CREATING REPORT"
 # Copy png plots in report directory 
 # Gather for each step the exit codes and check whether everything was successful.
 # Write the report 
-# Save and export report 
+# Save and export report
+
+
 if 'report' in task_list: 
+    
+    #convert configFileDict and task_dico to file.
+    output_dir = configFileDict['report_dir']
+    
+    dict2File(configFileDict,f"{output_dir}/configFileDict.json")
+    dict2File(task_dico,f"{output_dir}/task_dico.json")
+    
+    
     configFileDict['report_log_file'] = []
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
         
         wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in task_list if lst != "report"])
         print(wait_condition)
 
+        json1 = f"{output_dir}/configFileDict.json"
+        json2 = f"{output_dir}/task_dico.json"
         
-        CMD = "{python3} {report_script} test_report.md".format(python3 = configFileDict['python'], report_script = configFileDict['report'])
+        CMD = "{python3} {report_script} {json1} {json2} test_report.md".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2)
         
         # Create .sh file to run the command. 
         
@@ -637,18 +649,12 @@ if 'report' in task_list:
         REPORT_WAIT = ",".join(catchJID(out))
         configFileDict['REPORT_WAIT'] = REPORT_WAIT
         configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
-                
- 
         
-        #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
-    
+        
 
-def getConfigFileDict():
-    return configFileDict
+ 
 
-def getTaskDico():
-    return task_dico
-    
+        #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out)) 
 
 
 
@@ -669,7 +675,7 @@ if not args.output_dir:
 else:
     msg = "The pipeline started {time}. All results will be written under {raw_dir}.\nThe unique identifier of the pipeline run is: {uid}\nThe steps that will be run are {steps}.".format(raw_dir = configFileDict['output_dir'],steps=steps, uid=configFileDict['uid'],time=dt_string)
 
-writeEmail(addresses,subject,msg)
+#writeEmail(addresses,subject,msg)
 
 # Mail that pipeline ended # 
 wait_condition = []
@@ -688,3 +694,7 @@ else:
 DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}'".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses))
 SLURM_CMD = "{wsbatch} -o {raw_log}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], raw_log = configFileDict['raw_log'], uid = configFileDict['uid'],JID = wait_condition, cmd = DONE_CMD)
 out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+
+
+
+
