@@ -9,6 +9,8 @@ from collections import defaultdict
 import uuid
 import glob
 from datetime import datetime
+from pipeline_tools.slurmTools import catchJID
+import json
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -622,18 +624,31 @@ if 'report' in task_list:
         
         wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in task_list if lst != "report"])
         print(wait_condition)
+
+        
         CMD = "{python3} {report_script} test_report.md".format(python3 = configFileDict['python'], report_script = configFileDict['report'])
         
+        # Create .sh file to run the command. 
+        
         SLURM = "{wsbatch} --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD)
+        #print(SLURM)
         
-        subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
+        out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
+        REPORT_WAIT = ",".join(catchJID(out))
+        configFileDict['REPORT_WAIT'] = REPORT_WAIT
+        configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
                 
-        
-        
+ 
         
         #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
     
 
+def getConfigFileDict():
+    return configFileDict
+
+def getTaskDico():
+    return task_dico
+    
 
 
 

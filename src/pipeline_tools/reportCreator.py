@@ -6,16 +6,21 @@ import os
 import time 
 from collections import defaultdict
 import glob
+import json 
 
 pipeline_path = os.path.abspath(sys.path[0]).replace("pipeline_tools","")
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 utils_tools_path = os.path.abspath(pipeline_path+"/utils")
 sys.path.append(pipeline_tools_path)
 sys.path.append(utils_tools_path)
+sys.path.append(pipeline_path)
+
+from main import getConfigFileDict, getTaskDico
 from verbose import verbose as vrb
 from jobCheck import * 
 from Logger import Log
 from datetime import datetime
+
 
 #1. Combine bamQC stats and copy to report directory
 #2. Copy plots to report directory
@@ -26,7 +31,7 @@ from datetime import datetime
 ######## COMBINE bamQC and copy in report directory ##########
 
 def combineBamQC(configFileDict, task_dico):
-    wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in configDict['task_list'] if lst != "report"])
+    wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in configFileDict['task_list'] if lst != "report"])
     print(wait_condition)
     vrb.bullet("Merge all bamQC statistics into single csv file.")
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
@@ -54,18 +59,23 @@ def copyPlot(configFileDict, task_dico):
 
 def getAllExitCodesPerTask(configFileDict,task_dico):
     
-    vrb.bullet("Checking Exit Codes of task: "+task)
+    
     dico = defaultdict(dict)
     for task in configFileDict['task_list']:
-        logFiles = configFileDict[task_dico[task]]
+        vrb.bullet("Checking Exit Codes of task: "+task)
+        ogFiles = configFileDict[task_dico[task]]
         for file in logFiles:
             dico[task][file][check_exitCodes(file)]
     return dico 
 
             
-def main(configFileDict, task_dico,reportName):
-    TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling"}
+def main(reportName):
+    configFileDict = getConfigFileDict()
+    task_dico = getTaskDico()
+    configFileDict = json.loads(configFileDict)
+    task_dico = json.loads(task_dico)
     
+    TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling"}
     
     
     #1 combine bamQC data
