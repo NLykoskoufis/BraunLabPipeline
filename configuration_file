@@ -34,12 +34,24 @@ trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGC
 
 
 #Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
+#mapper, STAR 
 mapper,bowtie2
+
+#Choose parameters for mapping RNAseq using STAR 
+#RNAseq is mapped using 2pass mapping
+#STAR --outFileNamePrefix $outdir/$smp.1pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM Unsorted --outSJfilterReads Unique --outSJfilterOverhangMin 16 8 8 8\n";
+
+#STAR --outFileNamePrefix $outdir/$smp.2pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --sjdbFileChrStartEnd  /data/unige/funpopgen/hongen_temp/SYSCOL/STAR_mapping/merged_junctions.unannoted.filtered3unique.txt --chimSegmentMin 12 --chimJunctionOverhangMin 12 --outSAMunmapped Within --outSAMattributes All --outFilterMultimapNmax 20 --outSAMstrandField intronMotif --limitSjdbInsertNsj 1700000\n";
+
+#first pass,
+#interm_pass,
+#second pass,
 
 #Choose parameters for mapping using bowtie2
 #Example of how a bowtie command looks like 
 #bowtie2 -p 8 -x $mm10 --maxins 2000 -N 1 -1 testFile_R1_001.trim.fastq.gz -2 testFile_R2_001.trim.fastq.gz -S testFile.sam                                                         
 bowtie_parameters, -p 8 --maxins 2000 -N 1
+
 
 #Filter and sort BAM
 #samtools view -h ${file}.bam  | grep -v chrM | samtools view -b -h -F 4 -q 20 | samtools sort -O BAM -T ${file} > testFile.QualTrimNoMt.bam
@@ -78,7 +90,7 @@ mapping_qc_graphs,1
 #                                         SLURM SUBMIT                                                #
 #######################################################################################################
 slurm_trim, --time=04:00:00 --mem=10G --partition=shared-cpu
-slurm_mapping, --time=12:00:00 --mem=60G --partition=shared-cpu -n 1 -N 1 -c 8
+slurm_mapping, --time=12:00:00 --mem=40G --partition=shared-cpu -n 1 -N 1 -c 8
 slurm_peakCalling, --time=12:00:00 --mem=20G --partition=shared-cpu
 slurm_general, --time=12:00:00 --mem=20G --partition=shared-cpu
 slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 4
@@ -108,6 +120,9 @@ bam2bed_script,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/
 
 #jobCheck 
 jobCheck,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/jobCheck.py
+
+#report_script
+report,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/reportCreator.py
 
 #FastQC 
 FastQC,/home/users/l/lykoskou/Software/FastQC/fastqc

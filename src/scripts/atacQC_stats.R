@@ -25,4 +25,4 @@ df <- data.frame("totalQNAMEs"=totalQNAMEs,
                 "PCR_bottleneck_Coefficient_1" = PCR_1,
                 "PCR_bottleneck_Coefficient_2" = PCR_2)
 
-write.table(df, file=OUTPUT, col.names=TRUE, row.names=FALSE,sep="\t",quote=FALSE)
+write.table(df, file=OUTPUT, col.names=TRUE, row.names=FALSE,sep=",",quote=FALSE)

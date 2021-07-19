@@ -1,5 +1,7 @@
 #!/usr/bin/env python3 
  
+import markdown 
+from mdtable import MDTable
 
 # ===========================================================================================================
 DESC_COMMENT = "Logging function that creates report with various statistics from Pipeline run"
@@ -21,8 +23,15 @@ class Log:
         self.fileName = fileName 
         self.log = open(self.fileName, "w")
 
-    def md2html(self):
-        return None 
+    def md2html(self,html_output):
+        self.log.close()
+        f = open(self.fileName,'rt')
+        text = f.read()
+        html = markdown.markdown(text)
+        print(html)
+        g = open(html_output, "w")
+        g.write(html)
+        g.close()
    
     def md2pdf(self):
         return None 
@@ -52,10 +61,16 @@ class Log:
         return None 
 
     def image(self,title, path):
-        std = f"![{title}](path)"
+        std = f"![{title}]({path})"
         self.log.write(std)
         self.log.write("\n")
 
+    def csv2MDTable(self, fcsv):
+        markdown = MDTable(fcsv)
+        markdown_string_table = markdown.get_table()
+        self.log.write(markdown_string_table)
+        self.log.write("\n")
+    
     def bold(self,string):
         std = f"**{string}**"
         self.log.write(std)
@@ -71,7 +86,6 @@ class Log:
         std = f"***{string}***"
         self.log.write(std)
         
-    
     def text(self, string):
         self.log.write(std)
         
@@ -86,9 +100,9 @@ class Log:
         self.log.write(string)
         self.endl()
         
-log = Log("test.md")
-log.ctitle("This is a test","Nikolaos Lykoskoufis","12/07/2021")
-log.title("Title test")        
+#log = Log("test.md")
+#log.ctitle("This is a test","Nikolaos Lykoskoufis","12/07/2021")
+#log.title("Title test")        
         
    
     

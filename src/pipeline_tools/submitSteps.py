@@ -11,7 +11,15 @@ sys.path.append(pipeline_tools_path)
 from slurmTools import *
 
 def submitTrimming(configFileDict, FASTQ_PREFIX):
-    
+    """Function that submits slurm jobs for trimming reads.
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        FASTQ_PREFIX ([lst]): [List containing the FASTQ sample IDs]
+
+    Returns:
+        [str]: comma separated string containing slurm job IDs for wait condition
+    """    
     TRIM_JID_LIST = []
     for file in FASTQ_PREFIX:
         TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}_R1_001.fastq.gz {fastq_dir}/{file}_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
@@ -313,7 +321,7 @@ def submitBamQC(configFileDict, BAM_FILES):
     OUTPUT_DIR = configFileDict['atacQC_dir']
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
-        output_file = f"{OUTPUT_DIR}/{input_file}_bamQC.stats"
+        output_file = f"{OUTPUT_DIR}/{input_file}_bamQC_stats.csv"
         
         BAMQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['bamQC'],input = bam,output_dir = output_file) 
         
@@ -332,8 +340,6 @@ def submitBamQC(configFileDict, BAM_FILES):
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
     del BAMQC_JID_LIST
     return BAMQC_WAIT
-
-
 
 
 def submitFastQC(configFileDict):
@@ -368,7 +374,7 @@ def submitMultiQC(configFileDict):
     MFASTQC_JID_LIST = []
     INPUT_DIR = configFileDict['fastQC_dir']
     OUTPUT_DIR = INPUT_DIR
-    cmd = "{multiqc} -o {output_dir} {input_dir}".format(multiqc = configFileDict['multiQC'],output_dir = OUTPUT_DIR, input_dir = INPUT_DIR)
+    cmd = "{multiqc} -s -o {output_dir} {input_dir}".format(multiqc = configFileDict['multiQC'],output_dir = OUTPUT_DIR, input_dir = INPUT_DIR)
     SLURM_CMD = SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['FASTQC_WAIT'], cmd = cmd)
     print(SLURM_CMD)
     
