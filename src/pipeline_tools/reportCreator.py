@@ -31,8 +31,6 @@ from datetime import datetime
 ######## COMBINE bamQC and copy in report directory ##########
 
 def combineBamQC(configFileDict, task_dico):
-    wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in configFileDict['task_list'] if lst != "report"])
-    print(wait_condition)
     vrb.bullet("Merge all bamQC statistics into single csv file.")
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
         input_dir = configFileDict['atacQC_dir']
@@ -63,10 +61,16 @@ def copyPlot(configFileDict, task_dico):
 def getAllExitCodesPerTask(configFileDict,task_dico):
     dico = defaultdict(dict)
     for task in configFileDict['task_list']:
-        vrb.bullet("Checking Exit Codes of task: "+task)
-        logFiles = configFileDict[task_dico[task]]
-        for file in logFiles:
-            dico[task][file] = check_exitCodes(file)
+        if task == "report":
+            continue
+        else:
+            vrb.bullet("Checking Exit Codes of task: "+task)
+            print(task_dico[task])
+            logFiles = configFileDict[task_dico[task]]
+            print(logFiles)
+            for file in logFiles:
+                
+                dico[task][file] = check_exitCodes(file)
     return dico 
 
 def readDictFromFile(dico):
@@ -80,7 +84,7 @@ def readDictFromFile(dico):
 def main(configFileDict_file, task_dico_file, reportName):
     configFileDict = readDictFromFile(configFileDict_file)
     task_dico = readDictFromFile(task_dico_file)
-    
+    #print(configFileDict)
     
     TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling"}
     
@@ -100,22 +104,25 @@ def main(configFileDict_file, task_dico_file, reportName):
     log = Log(reportName) # Initialize logger
     log.ctitle("Testing pipeline report", "Nikolaos Lykoskoufis",date)
     
-    for task in configFileDict['task_dico']:
-        log.title(TASKS[task])
-        logFiles = dico[task]
-        code_set = set()
-        FAILED = []
-        for log,exitCode in logFiles.items():
-            if not exitCode:
-                FAILED.append(log)
+    for task in configFileDict['task_list']:
+        if task == "report":
+            continue
+        else: 
+            log.title(TASKS[task])
+            logFiles = dico[task]
+            code_set = set()
+            FAILED = []
+            for l,exitCode in logFiles.items():
+                if not exitCode:
+                    FAILED.append(l)
+                else:
+                    continue
+            if len(FAILED)!=0:
+                log.bold("Some jobs have failed.")
+                for i in FAILED: 
+                    log.text(i)
             else:
-                continue
-        if len(FAILED)!=0:
-            log.bold("Some jobs have failed.")
-            for i in FAILED: 
-                log.text(i)
-        else:
-            log.bold("All jobs have sucesssfully complteted for this step")
+                log.bold("All jobs have sucesssfully complteted for this step")
     
     log.heading1("ATAC seq QC plots")
     plots = glob.glob(configFileDict['report_dir']+"/*.png")
@@ -124,7 +131,7 @@ def main(configFileDict_file, task_dico_file, reportName):
     else: 
         for plot in plots:
             plot_title = plot.replace(".png","")
-            log.image(plot_title, plot)         
+            log.image(plot_title, os.path.basename(plot))         
     
             
     # wrapping up and converting markdown to html 

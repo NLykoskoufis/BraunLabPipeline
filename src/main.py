@@ -626,7 +626,7 @@ if 'report' in task_list:
     output_dir = configFileDict['report_dir']
     
     dict2File(configFileDict,f"{output_dir}/configFileDict.json")
-    dict2File(task_dico,f"{output_dir}/task_dico.json")
+    dict2File(task_log_dico,f"{output_dir}/task_log_dico.json")
     
     
     configFileDict['report_log_file'] = []
@@ -636,13 +636,13 @@ if 'report' in task_list:
         print(wait_condition)
 
         json1 = f"{output_dir}/configFileDict.json"
-        json2 = f"{output_dir}/task_dico.json"
+        json2 = f"{output_dir}/task_log_dico.json"
         
-        CMD = "{python3} {report_script} {json1} {json2} test_report.md".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2)
+        CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = output_dir)
         
         # Create .sh file to run the command. 
         
-        SLURM = "{wsbatch} --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD)
+        SLURM = "{wsbatch} --dependency=afterok:{JID} -o {output_dir}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD, output_dir = output_dir)
         #print(SLURM)
         
         out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
