@@ -52,7 +52,7 @@ def copyPlot(configFileDict, task_dico):
         sampleID = configFileDict['sample_prefix']
         samples_plots = [input_dir + "/" + i +"_fragSizeDistPlot.png" for i in sampleID]
         
-        cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=",".join(samples_plots))
+        cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=" ".join(samples_plots))
     return cp_plots 
 
 
@@ -113,16 +113,8 @@ def main(configFileDict_file, task_dico_file, reportName):
             code_set = set()
             FAILED = []
             for l,exitCode in logFiles.items():
-                if not exitCode:
-                    FAILED.append(l)
-                else:
-                    continue
-            if len(FAILED)!=0:
-                log.bold("Some jobs have failed.")
-                for i in FAILED: 
-                    log.text(i)
-            else:
-                log.bold("All jobs have sucesssfully complteted for this step")
+                val = "Successfully completed" if exitCode else "Failed"
+                log.bullet(l + ": " + val)
     
     log.heading1("ATAC seq QC plots")
     plots = glob.glob(configFileDict['report_dir']+"/*.png")

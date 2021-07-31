@@ -11,17 +11,12 @@ OUTDIR <- args[2]
 bamfile.label <- sapply(strsplit(basename(INPUT), "\\."),"[[",1)
 output_pdf <- paste0(OUTDIR, "/",bamfile.label,"_fragSizeDistPlot.pdf")
 output_png <- paste0(OUTDIR, "/",bamfile.label,"_fragSizeDistPlot.png")
-#pdf(output,height=5,width=6)
-#fragSizeDist(INPUT, bamfile.label)
-#dev.off()
-#png(output,height=500,width=600)
+
 pdf(output_pdf,height=5,width=6)
-a<-dev.cur()
-png(output_png, height=500,width=600)
-dev.control("enable")
 fragSizeDist(INPUT, bamfile.label)
-dev.copy(which=a)
 dev.off()
+png(output_png, height=500,width=600)
+fragSizeDist(INPUT, bamfile.label)
 dev.off()
 
 

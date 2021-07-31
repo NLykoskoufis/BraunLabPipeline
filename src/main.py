@@ -76,9 +76,14 @@ parser.add_argument('-bed', '--bed-dir', dest='bed_dir', type=str, help='Absolut
 parser.add_argument('-bw', '--bigwig-dir', dest='bigwig_dir', type=str, help='Absolut path peak calling diretory')
 parser.add_argument('-od', '--output-dir', dest='output_dir', type=str, help='Path to output directory. Use it only if you do not run the pipeline from step')
 parser.add_argument('-cf','--configuration-file', dest='config_file_path', required=True,type=str, help='Name of your configuration file: project_run_config_V1')
-#parser.add_argument('-tf', dest='tar_fastq', action='store_true', help='True if you want to do a backup of fastq files. \'-rn\' and \'-pn\' options are mandatory to do a backup.')
-#parser.add_argument('-tb', dest='tar_bam', action='store_true', help='True if you want to do a backup of bam files. \'-rn\' and \'-pn\' options are mandatory to do a backup.')
+#parser.add_argument('-tf', dest='tar_fastq', action='store_true', help='True if you want to do a backup of fastq files. \'-tf_dir\' option is mandatory to do a backup of fastq files.')
+#parser.add_argument('-tb', dest='tar_bam', action='store_true', help='True if you want to do a backup of bam files. \'-tb_dir\' option is mandatory to do a backup of bam files.')
+#parser.add_argument('-tf_dir', '--tf-dir', dest='backup_fastq_dir', type=str, help='Path to backup fastq diretory. This option is required if you want to perform a backup of fastq files.')
+#parser.add_argument('-tb_dir', '--tb-dir', dest='backup_bam_dir', type=str, help='Path to backup bam diretory. This option in required if you want to perform a backup of bam files.')
 parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
+
+
+
 
 ####################
 #    CHECK ARGS    #
@@ -97,7 +102,6 @@ else:
     configFileDict = getConfigDict(args.config_file_path) # Create dictionay containing all important information for the pipeline to work. 
 
 #get list of tasks
-
 if not args.task:
     vrb.error('ERROR: You must give task(s) to run : arg -t\n')
     sys.exit(1)
@@ -107,7 +111,7 @@ if configFileDict['technology'] == "ATACseq":
         task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','report']
 elif configFileDict['technology'] == "ChIPSeq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4','4.1', '4.2', '5','6','7','8','report'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
         task_list = ['2','4','9','report']
@@ -546,6 +550,8 @@ if '5' in task_list:
     task_dico['5'] = "BAM2BW_WAIT"
 
     task_log_dico['5'] = 'bw_log_files'
+    
+
 # ===========================================================================================================
 STEP6 = "BAM 2 BED"
 # ===========================================================================================================   
@@ -565,6 +571,8 @@ if '6' in task_list: # Need to wait for '4' or none
     task_dico['6'] = "BAM2BED_WAIT"
     
     task_log_dico['6'] = 'bam2bed_log_files'
+    
+
 # ===========================================================================================================
 STEP7 = "Extend bed reads"
 # ===========================================================================================================   

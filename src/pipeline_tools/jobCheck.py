@@ -35,10 +35,12 @@ def write_sacct(logFile):
     g = open(logFile,"a")
     for l in lines: 
         g.write("__JOB_SUMMARY_INFO|"+"".join(l)+"\n")
-        if exitCode:
-            g.write("__JOB_SUMMARY_INFO|COMPLETED|Successfuly completed\n")
-        else:
-            g.write("__JOB_SUMMARY_INFO|FAILED|Failed\n")
+    if exitCode:
+        g.write("__JOB_SUMMARY_INFO|COMPLETED|Successfuly completed\n")
+    else:
+        g.write("__JOB_SUMMARY_INFO|FAILED|Failed\n")
+
+
 
 def check_exitCodes(logFile):
     f = open(logFile, "rb")
@@ -52,8 +54,6 @@ def check_exitCodes(logFile):
             return True 
         else:
             return False
-
-
         
     
 
@@ -61,7 +61,6 @@ if __name__ == "__main__":
         
     parser = argparse.ArgumentParser(description='Check jobs')
     parser.add_argument('-v', dest='version', action='store_true', help='Display pipeline version')
-    parser.add_argument('-log', '--log-file', dest='bigwig_dir', type=str, help='Absolut path peak calling diretory')
     #If user is asking for version
     if len(argv) > 1:
         if argv[1] == '-v':
