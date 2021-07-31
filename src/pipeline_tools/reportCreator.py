@@ -91,8 +91,10 @@ def main(configFileDict_file, task_dico_file, reportName):
     
     #1 combine bamQC data
     COMBINE_CMD = subprocess.Popen(combineBamQC(configFileDict,task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    
     #2 copy plots to report directory 
-    COPY_CMD = subprocess.Popen(copyPlot(configFileDict, task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    if configFileDict['technology'] == "ATACseq":
+        COPY_CMD = subprocess.Popen(copyPlot(configFileDict, task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
     
     #3 Get all exit Codes per task 
     
@@ -103,6 +105,11 @@ def main(configFileDict_file, task_dico_file, reportName):
 
     log = Log(reportName) # Initialize logger
     log.ctitle("Testing pipeline report", "Nikolaos Lykoskoufis",date)
+    # Adding directory where all results will be written. 
+    if configFileDict.get("output_dir") == None:
+        log.bullet("Output directory: "+ configFileDict['raw_dir'])
+    else: 
+        log.bullet("Output directory: "+ configFileDict['output_dir'])
     
     for task in configFileDict['task_list']:
         if task == "report":
@@ -116,14 +123,15 @@ def main(configFileDict_file, task_dico_file, reportName):
                 val = "Successfully completed" if exitCode else "Failed"
                 log.bullet(l + ": " + val)
     
-    log.heading1("ATAC seq QC plots")
-    plots = glob.glob(configFileDict['report_dir']+"/*.png")
-    if len(plots) == 0: 
-        print("No plots to add to report")
-    else: 
-        for plot in plots:
-            plot_title = plot.replace(".png","")
-            log.image(plot_title, os.path.basename(plot))         
+    if configFileDict['technology'] == "ATACseq":
+        log.title("ATAC seq QC plots")
+        plots = glob.glob(configFileDict['report_dir']+"/*.png")
+        if len(plots) == 0: 
+            print("No plots to add to report")
+        else: 
+            for plot in plots:
+                plot_title = plot.replace(".png","")
+                log.image(plot_title, os.path.basename(plot))         
     
             
     # wrapping up and converting markdown to html 

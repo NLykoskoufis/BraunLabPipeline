@@ -39,7 +39,9 @@ mapper,bowtie2
 
 #Choose parameters for mapping RNAseq using STAR 
 #RNAseq is mapped using 2pass mapping
-#STAR --outFileNamePrefix $outdir/$smp.1pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/#STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM Unsorted --outSJfilterReads Unique --outSJfilterOverhangMin 16 8 8 8\n";
+#STAR --outFileNamePrefix $outdir/$smp.1pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/#STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM Unsorted --outSJfilterReads Unique --outSJfilterOverhangMin 16 8 8 8";
+#1pass, --outSJfilterOverhangMin 16 8 8 8
+
 
 #STAR --outFileNamePrefix $outdir/$smp.2pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/#STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --sjdbFileChrStartEnd  /data/
 unige/funpopgen/hongen_temp/SYSCOL/STAR_mapping/merged_junctions.unannoted.filtered3unique.txt --chimSegmentMin 12 --chimJunctionOverhangMin 12 --outSAMunmapped Within --outSAMattributes All --outFilterMultimapNmax 20 --outSAMstrandField intronMotif --limitSjdbInsertNsj 1700000\n";
