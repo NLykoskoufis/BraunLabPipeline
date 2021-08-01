@@ -39,7 +39,7 @@ def combineBamQC(configFileDict, task_dico):
         sampleID = configFileDict['sample_prefix']
         samples_csvs = [input_dir + "/" + i +"_bamQC_stats.csv" for i in sampleID]
         
-        merge_cmd = "awk 'NR==1 || FNR>1' {sample} > {input_dir}/Allsamples_bamQC_stats.csv && cp {input_dir}/Allsamples_bamQC_stats.csv {output_dir}/Allsamples_bamQC_stats.csv ".format(input_dir=input_dir, output_dir = output_dir,sample=",".join(samples_csvs))
+        merge_cmd = "awk 'NR==1 || FNR>1' {sample} > {input_dir}/Allsamples_bamQC_stats.csv && cp {input_dir}/Allsamples_bamQC_stats.csv {output_dir}/Allsamples_bamQC_stats.csv ".format(input_dir=input_dir, output_dir = output_dir,sample=" ".join(samples_csvs))
         return merge_cmd 
 
 
