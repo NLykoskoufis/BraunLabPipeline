@@ -43,6 +43,8 @@ mapper,bowtie2
 #1pass, --outSJfilterOverhangMin 16 8 8 8
 
 
+#2pass, --outFilterMultimapNmax 20
+
 #STAR --outFileNamePrefix $outdir/$smp.2pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/#STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --sjdbFileChrStartEnd  /data/
 unige/funpopgen/hongen_temp/SYSCOL/STAR_mapping/merged_junctions.unannoted.filtered3unique.txt --chimSegmentMin 12 --chimJunctionOverhangMin 12 --outSAMunmapped Within --outSAMattributes All --outFilterMultimapNmax 20 --outSAMstrandField intronMotif --limitSjdbInsertNsj 1700000\n";
 

@@ -64,7 +64,8 @@ class Log:
         std = f"![{title}]({path})"
         self.log.write(std)
         self.log.write("\n")
-
+        
+    
     def csv2MDTable(self, fcsv):
         markdown = MDTable(fcsv)
         markdown_string_table = markdown.get_table()

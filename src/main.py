@@ -698,8 +698,12 @@ if not args.output_dir:
     msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['raw_dir'], steps=steps, uid = configFileDict['uid'])
 else:
     msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['output_dir'], steps=steps, uid = configFileDict['uid'])
+    reportZipFile = "report.zip"
+    zipReport_script = 
+########## TO BE FINISHED HERE!!!!!!! ##########
+DONE_CMD = "python3 {zipReport} {reportDir} {reportZipFile} && python3 {mail} -add {addresses} -subject {subject} -msg '{msg}' -join {reportZipFile}".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses), reportZipFile = reportZipFile, zipReport = zipReport_script, reportDir = configFileDict['report_dir'])
+##################################################
 
-DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}'".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses))
 SLURM_CMD = "{wsbatch} -o {raw_log}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], raw_log = configFileDict['raw_log'], uid = configFileDict['uid'],JID = wait_condition, cmd = DONE_CMD)
 out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 

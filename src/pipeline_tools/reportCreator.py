@@ -20,12 +20,28 @@ from verbose import verbose as vrb
 from jobCheck import * 
 from Logger import Log
 from datetime import datetime
-
+import zipfile
 
 #1. Combine bamQC stats and copy to report directory
 #2. Copy plots to report directory
 #3. Get dictionary with all steps and exit codes. 
 #4. Start report.
+
+
+def zipDir(dirpath, outFullName):
+    '''
+         Compress the specified folder
+         :param dirpath: target folder path
+         :param outFullName: compressed file save path +XXXX.zip
+         :return: none
+    '''
+    zip = zipfile.ZipFile(outFullName, 'w', zipfile.ZIP_DEFLATED)
+    for path,dirnames,filenames in os.walk(dirpath):
+        #Remove the target and path, only compress the files and folders under the target folder
+        fpath = path.replace(dirpath,'')
+        for filename in filenames:
+            zip.write(os.path.join(path, filename), os.path.join(fpath,filename))
+    zip.close()
 
 
 ######## COMBINE bamQC and copy in report directory ##########
@@ -50,7 +66,7 @@ def copyPlot(configFileDict, task_dico):
         output_dir = configFileDict['report_dir']
         output_log = configFileDict['report_dir'] + "/log"
         sampleID = configFileDict['sample_prefix']
-        samples_plots = [input_dir + "/" + i +"_fragSizeDistPlot.png" for i in sampleID]
+        samples_plots = [input_dir + "/" + i +"_fragSizeDistPlot.pdf" for i in sampleID]
         
         cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=" ".join(samples_plots))
     return cp_plots 
@@ -125,12 +141,12 @@ def main(configFileDict_file, task_dico_file, reportName):
     
     if configFileDict['technology'] == "ATACseq":
         log.title("ATAC seq QC plots")
-        plots = glob.glob(configFileDict['report_dir']+"/*.png")
+        plots = glob.glob(configFileDict['report_dir']+"/*.pdf")
         if len(plots) == 0: 
             print("No plots to add to report")
         else: 
             for plot in plots:
-                plot_title = plot.replace(".png","")
+                plot_title = plot.replace(".pdf","")
                 log.image(plot_title, os.path.basename(plot))         
     
             
