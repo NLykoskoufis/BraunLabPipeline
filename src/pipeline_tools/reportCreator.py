@@ -20,7 +20,6 @@ from verbose import verbose as vrb
 from jobCheck import * 
 from Logger import Log
 from datetime import datetime
-import zipfile
 
 #1. Combine bamQC stats and copy to report directory
 #2. Copy plots to report directory
@@ -28,20 +27,6 @@ import zipfile
 #4. Start report.
 
 
-def zipDir(dirpath, outFullName):
-    '''
-         Compress the specified folder
-         :param dirpath: target folder path
-         :param outFullName: compressed file save path +XXXX.zip
-         :return: none
-    '''
-    zip = zipfile.ZipFile(outFullName, 'w', zipfile.ZIP_DEFLATED)
-    for path,dirnames,filenames in os.walk(dirpath):
-        #Remove the target and path, only compress the files and folders under the target folder
-        fpath = path.replace(dirpath,'')
-        for filename in filenames:
-            zip.write(os.path.join(path, filename), os.path.join(fpath,filename))
-    zip.close()
 
 
 ######## COMBINE bamQC and copy in report directory ##########
@@ -130,7 +115,7 @@ def main(configFileDict_file, task_dico_file, reportName):
     for task in configFileDict['task_list']:
         if task == "report":
             continue
-        else: 
+        else:
             log.title(TASKS[task])
             logFiles = dico[task]
             code_set = set()

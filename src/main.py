@@ -124,7 +124,7 @@ elif configFileDict['technology'] == "RNAseq":
 else: 
     vrb.error("ERROR. The pipeline can only process ATACseq, ChIPseq or RNAseq data. PLease specify one of them in the configuration file")
 
-    
+print(task_list)
 
 
 if not args.raw_dir: 
@@ -156,7 +156,7 @@ STEP1 = "CHECKING STEPS AND ADDING DIRECTORIES IN DICTIONARY AND CREATING THEM"
 
 #Create raw log directory
 if checkDir(configFileDict['raw_log']):
-    vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    vrb.bullet("Directory already exists. All log files will be written here.")
 else: 
     createDir(configFileDict['raw_log'])
 
@@ -180,6 +180,8 @@ if '1' in task_list:
 
 
 if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
+    print("Entering 1.1")
+    
     if not args.fastq_dir:
         vrb.error("ERROR. you need to specify a fastq directory.")
     else: 
@@ -193,6 +195,7 @@ if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
         configFileDict['fastQC_dir'] = f"{args.output_dir}/fastQC"
     else: 
         configFileDict['fastQC_dir'] = f"{args.raw_dir}/fastQC"
+        print(configFileDict['fastQC_dir'])
     if checkDir(configFileDict['fastQC_dir']): 
         vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
     else: 
@@ -562,7 +565,7 @@ if '6' in task_list: # Need to wait for '4' or none
     if '4' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
-        configFileDict['BAM2BW_WAIT'] = BAM2BED_WAIT
+        configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
     else: 
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
@@ -627,7 +630,6 @@ REPORT = "CREATING REPORT"
 # Write the report 
 # Save and export report
 
-
 if 'report' in task_list: 
     
     #convert configFileDict and task_dico to file.
@@ -657,14 +659,8 @@ if 'report' in task_list:
         REPORT_WAIT = ",".join(catchJID(out))
         configFileDict['REPORT_WAIT'] = REPORT_WAIT
         configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
-        
-        
-
- 
 
         #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out)) 
-
-
 
 
 ########################
@@ -696,13 +692,15 @@ for t in task_list:
 wait_condition = ",".join(wait_condition)
 if not args.output_dir:
     msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['raw_dir'], steps=steps, uid = configFileDict['uid'])
+    #reportZipFile = "report.zip"
+    #zipReport_script = "{}/zipDirectory.py".format(pipeline_tools_path)
 else:
     msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['output_dir'], steps=steps, uid = configFileDict['uid'])
-    reportZipFile = "report.zip"
-    zipReport_script = 
-########## TO BE FINISHED HERE!!!!!!! ##########
-DONE_CMD = "python3 {zipReport} {reportDir} {reportZipFile} && python3 {mail} -add {addresses} -subject {subject} -msg '{msg}' -join {reportZipFile}".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses), reportZipFile = reportZipFile, zipReport = zipReport_script, reportDir = configFileDict['report_dir'])
-##################################################
+    #reportZipFile = "report.zip"
+    #zipReport_script = "{}/zipDirectory.py".format(pipeline_tools_path)
+
+DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}'".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses))
+
 
 SLURM_CMD = "{wsbatch} -o {raw_log}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], raw_log = configFileDict['raw_log'], uid = configFileDict['uid'],JID = wait_condition, cmd = DONE_CMD)
 out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
