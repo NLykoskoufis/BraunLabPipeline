@@ -13,58 +13,59 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 
 #### NEEDED FILES PATH #####
 
-reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+### REFERENCE GENOMES ####
+#reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/STAR_v2.7.5c/GRCh37_gencode.v19_50bp-readlength
+##########################
 
+#### 
 genomeFileSize,/home/users/l/lykoskou/Software/bedtools2/genomes/mouse.mm10.genome
+
+#### ANNOTATION FILES #####
+annotation, /srv/beegfs/scratch/groups/funpopgen/data/annotations/gencode.v19.annotation.nochr.gtf
+###########################
 
 
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
-#pairend,1
+pairend,1
+
 
 # Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
-technology,ATACseq
+technology,RNAseq
 
-#Trim reads using cutadapt
+#### READ TRIMMING OPTIONS ####
 #Example of how a cutadapt commands looks like 
 #cutadapt -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 -o testFile_R1_001.trim.fastq.gz -p testFile_R2_001.trim.fastq.gz testFile_R1_001.fastq.gz testFile_R2_001.fastq.gz
 #If you want to modify the parameters used, you can comment the line below, and add what you want. 
 trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 
+###############################
 
-
-
+#### MAPPER #### 
 #Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
-#mapper, STAR 
-#mapper, bwa
-mapper,bowtie2
-
-#Choose parameters for mapping RNAseq using STAR 
-#RNAseq is mapped using 2pass mapping
-#STAR --outFileNamePrefix $outdir/$smp.1pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/#STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM Unsorted --outSJfilterReads Unique --outSJfilterOverhangMin 16 8 8 8";
-#1pass, --outSJfilterOverhangMin 16 8 8 8
+mapper,STAR 
+#mapper,bowtie2
+################
 
 
-#2pass, --outFilterMultimapNmax 20
+#### STAR OPTIONS ####
+STARoptions, --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMunmapped Within --outSAMattributes All
 
-#STAR --outFileNamePrefix $outdir/$smp.2pass. --genomeDir /data/unige/funpopgen/hongen_temp/SYSCOL/#STAR_mapping/star_gencode.v10/genome  --readFilesIn $pairings{$ind}{$type}{$smp}{1} $pairings{$ind}{$type}{$smp}{2} --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --sjdbFileChrStartEnd  /data/
-unige/funpopgen/hongen_temp/SYSCOL/STAR_mapping/merged_junctions.unannoted.filtered3unique.txt --chimSegmentMin 12 --chimJunctionOverhangMin 12 --outSAMunmapped Within --outSAMattributes All --outFilterMultimapNmax 20 --outSAMstrandField intronMotif --limitSjdbInsertNsj 1700000\n";
+STARreadLength, 50
+######################
 
-
-
-#first pass,
-#interm_pass,
-#second pass,
-
+#### BOWTIE OPTIONS ####
 #Choose parameters for mapping using bowtie2
 #Example of how a bowtie command looks like 
 #bowtie2 -p 8 -x $mm10 --maxins 2000 -N 1 -1 testFile_R1_001.trim.fastq.gz -2 testFile_R2_001.trim.fastq.gz -S testFile.sam                                                         
-
 bowtie_parameters, -p 8 --maxins 2000 -N 1
 
 #bowtie2 for ChIP-seq data. If
 #bowtie_parameters,--sensitive -p 8
+#######################
 
 
 
+#### PCR DUPLICATION IDENTIFICATION ####
 #PCR duplicates. This is step XX. If you have selected it, the following command will be executed. No parameters or anything to add here. This command does not change.
 #Example: java -Xmx8g -jar $PICARD MarkDuplicates I=${file}.QualTrimNoMt.bam O=${file}.QualTrimNoMt.Picard.bam M=${file}.metrix
 
@@ -73,6 +74,7 @@ bowtie_parameters, -p 8 --maxins 2000 -N 1
 #PCR_duplicates_removal,-h -F 3844 -q20
 
 PCR_duplicates_removal,-h -F 1796 -q20
+#########################################
 
 #Deeptools to create normalized .bw files 
 #bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max --extendReads 200
@@ -85,6 +87,9 @@ extend_reads,150
 #Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
 peak_calling,--format BED --nomodel -g mm -B 
 
+#### EXON QUANTIFICATION OPTIONS ####
+quantOptions, 
+#####################################
 
 #Perform fastq QC using FastQC (0=no, 1=yes)
 fastq_qc,1
@@ -112,6 +117,8 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #mail_script 
 mail_script, ,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/sendEmail.py
 
+#junction Merge script 
+junctionMerge_script, /srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/merge_junctions.pl
 
 #extendReads script 
 extendReadsScript,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/extendBedReads.sh
@@ -134,7 +141,6 @@ report,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipe
 #FastQC 
 FastQC,/home/users/l/lykoskou/Software/FastQC/fastqc
 
-
 #multiQC
 multiQC,/home/users/l/lykoskou/.local/bin/multiqc
 
@@ -151,7 +157,7 @@ bedtools,/home/users/l/lykoskou/Software/bedtools2/bin/bedtools
 bowtie2,/home/users/l/lykoskou/Software/bowtie2-2.4.4/bowtie2
 
 #Path to STAR
-#star,/srv/beegfs/scratch/groups/funpopgen/Tools/STAR-2.7.5c/bin/Linux_x86_64_static/STAR
+star,/srv/beegfs/scratch/groups/funpopgen/Tools/STAR-2.7.5c/bin/Linux_x86_64_static/STAR
 
 #Path to samtools
 samtools,/home/users/l/lykoskou/Software/samtools-1.12/samtools

@@ -11,6 +11,7 @@ import glob
 from datetime import datetime
 from pipeline_tools.slurmTools import catchJID
 import json
+from pipeline_tools.submitSteps import submitMappingSTAR
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -115,7 +116,7 @@ elif configFileDict['technology'] == "ChIPSeq":
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
         task_list = ['2','4','9','report']
-    if '3' or '4' in task_list: 
+    if '3' in task_list or '4' in task_list: 
         vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
     if '8' in task_list:
         vrb.error("ERROR. You cannot call peaks from RNAseq data.")
@@ -206,7 +207,7 @@ if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
 
     
     
-if '2' in task_list: ## MAPs and sorts by coordinates
+if '2' in task_list and configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": ## MAPs and sorts by coordinates
     # Arguments required here are -cf -raw -fastq -od
     if '1' not in task_list: 
         if not args.fastq_dir: 
@@ -228,7 +229,26 @@ if '2' in task_list: ## MAPs and sorts by coordinates
         createLog(configFileDict['bam_dir'])
         createDir(configFileDict['sorted_bam_dir'])
         createLog(configFileDict['sorted_bam_dir'])
-        
+elif '2' in task_list and configFileDict['technology'] == "RNAseq":
+    print("mapping RNA seq")
+    if '1' not in task_list: 
+        if not args.fastq_dir: 
+            vrb.error("ERROR. You need to specify a fastq directory")
+        else:
+            configFileDict['trimmed_fastq_dir'] = args.fastq_dir 
+    
+    if args.output_dir:
+        print("You specified an output directory. The mapped bam files will be saved in the specified directory and the mapper will not automatically create a bam directory under the raw directory specified")
+        configFileDict['bam_dir'] = f"{args.output_dir}/bam"
+    else: 
+        configFileDict['bam_dir'] = f"{args.raw_dir}/bam"
+    if checkDir(configFileDict['bam_dir']): 
+        vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['bam_dir'])
+        createLog(configFileDict['bam_dir'])
+else: 
+    vrb.error("You need to specify a technology [ATACseq, ChIPseq, RNAseq] for the pipeline to work.")
         
 
 if '3' in task_list: ### PCR DUPLICATES MARK
@@ -362,6 +382,7 @@ if '8' in task_list:
             createLog(configFileDict['peaks_dir'])
     elif configFileDict['technology'] == "RNAseq":
         print("WORK IN PROGRESS")
+        print("RNAseq mapping")
     else: 
         vrb.error("You need to specify a technology, either ATACseq, ChIPseq or RNAseq")
 
@@ -403,7 +424,6 @@ if '1' in task_list:
         
     fastq_dir = configFileDict['fastq_dir']
     FASTQ_FILES = getFastqPrefix(fastq_dir)
-    print(FASTQ_FILES[0])
     configFileDict['trim_log_files'] = [] 
     configFileDict['sample_prefix'] = FASTQ_FILES
     TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
@@ -426,8 +446,7 @@ if '1.1' in task_list:
     vrb.bullet("Running multiqc to get all FastQC in a single report\n")
     configFileDict['multiqc_log_files'] = []
     MFASTQC_WAIT = submitMultiQC(configFileDict)
-    submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)
-    
+    submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)    
     task_log_dico['1.1'] = 'fastqQC_log_files'
     
 
@@ -443,13 +462,20 @@ if '2' in task_list:
     if '1' not in task_list:
         FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
         FASTQ_PATH=configFileDict['trimmed_fastq_dir']
-        configFileDict['sample_prefix'] = FASTQ_PREFIX
+        configFileDict['sample_prefix'] = FASTQ_PREFIX # What if For trimming and mapping steps I created a list with all sample IDs in configFileDict so that I can just read it from there instead of creating variables all the time?? an just 
     else:
         FASTQ_PREFIX=getFastqPrefix(configFileDict['fastq_dir'])
         FASTQ_PATH=configFileDict['fastq_dir']
+        configFileDict['sample_prefix'] = FASTQ_PREFIX
+    
     if configFileDict["mapper"] == "bowtie2":
         MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
-        configFileDict['MAP_WAIT'] = MAP_WAIT                
+    elif configFileDict['mapper'] == "STAR":
+        MAP_WAIT = submitMappingSTAR(configFileDict, FASTQ_PREFIX)    
+    else: 
+        print("You need to specify a mapper")
+    
+    configFileDict['MAP_WAIT'] = MAP_WAIT                
     submitJobCheck(configFileDict,'mapping_log_files',MAP_WAIT)
     task_dico['2'] = "MAP_WAIT"
     

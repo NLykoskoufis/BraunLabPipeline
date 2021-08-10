@@ -1,6 +1,4 @@
 #!/usr/bin/env python3 
-
-
 import subprocess
 import sys 
 import glob
@@ -8,19 +6,14 @@ import os
 import math
 import argparse
 from pipeline_tools.slurmTools import catchJID
+import json
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 sys.path.append(pipeline_tools_path)
 from slurmTools import *
+from submitSteps import submitJobCheck
 
-
-def submitJobCheck(configFileDict, log_key, wait_key):
-    log_files = configFileDict[log_key]
-    for file in log_files: 
-        cmd = "python3 {jobCheck} -w -log {file}".format(jobCheck=configFileDict['jobCheck'], file=file)
-        SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 
 def STAR_1pass(configFileDict):
     FIRST_PASS_JID_LST = []
@@ -60,11 +53,13 @@ def STAR_createTABfile(configFileDict):
     TABFILE_WAIT = catchJID(out)
     
     return TABFILE_WAIT
- 
-def get_limitSjdbInsertNsj(configFileDict):
-    cmd = "wc -l {file}/merged_junctions.txt".format(configFileDict['bam_dir'])
-    out = int(subprocess.check_output(cmd, shell=True, universal_newlines=True, stderr= subprocess.STDOUT).split()[0])
-    return out
+
+
+read_limitSjdbInsertNsj_json(configFileDict):
+    fileName = "{bam_path}/limitSjdbInsertNsj.txt".format(bam_path = configFileDict['bam_dir'])
+    f = open(fileName, "rt")
+    line = f.readline().rstrip().split()    
+    return int(line)
 
 def increase_limitSjdbInsertNsj(value):
     value = str(value)
@@ -79,8 +74,8 @@ def increase_limitSjdbInsertNsj(value):
         new_number.append(str(int(value)+1))
     return new_number
 
-def STAR_2pass(configFileDict,limitSjdbInsertNsj):
-    #limitSjdbInsertNsj = increase_limitSjdbInsertNsj(get_limitSjdbInsertNsj(configFileDict))
+def STAR_2pass(configFileDict):
+    limitSjdbInsertNsj = read_limitSjdbInsertNsj_json(configFileDict)
     sjdbFile = configFileDict['sjdbFile']
     
     output_prefix = None 
@@ -89,10 +84,6 @@ def STAR_2pass(configFileDict,limitSjdbInsertNsj):
     
     cmd = "{star} --outFileNamePrefix {outputFilePrefix} --genomeDir {STAR_genome_dir} --readFilesIn {fastq1} {fastq2}  --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --sjdbFileChrStartEnd  {sjdbFileChrStartEnd} --outSAMunmapped Within --outSAMattributes All --outFilterMultimapNmax 20 --outSAMstrandField intronMotif --limitSjdbInsertNsj {limitSjdbInsertNsj}".format(configFileDict['STAR'], outputFilePrefix=output_prefix, STAR_genome_dir = configFileDict['reference_genome'], fastq1= fastq1, fastq2=fastq2,sjdbFileChrStartEnd=sjdbFile, limitSjdbInsertNsj=limitSjdbInsertNsj)
     return None
-
-if __name__ == "__main__":
-    print(increase_limitSjdbInsertNsj(get_limitSjdbInsertNsj(*sys.argv[1:])))
-
 
 
 

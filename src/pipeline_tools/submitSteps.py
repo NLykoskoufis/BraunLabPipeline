@@ -72,6 +72,55 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
     return MAP_WAIT
 
 
+def submitMappingSTAR(configFileDict, FASTQ_PREFIX):
+    """[Submits jobs for Mapping using STAR]
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        FASTQ_FILES ([lst]): [List containing the FASTQ sample IDs]
+        FASTQ_PATH [str]: Absolute path of the FASTQ files
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """  
+    MAP_JID_LIST = []
+    configFileDict['mapping_log_files'] = []
+    
+    pairend = configFileDict['pairend']
+    STAR = configFileDict['star']
+    ref_genome = configFileDict['reference_genome']
+    annotation = configFileDict['annotation']
+    readLength = configFileDict['STARreadLength']
+    bamDir = configFileDict['bam_dir']
+    fastqDir = configFileDict['trimmed_fastq_dir']
+    logDir = bamDir + '/log/'
+
+    sjdbOverhang = int(readLength)-int(1)
+    
+    for sample in FASTQ_PREFIX:                                                        
+
+
+        if(pairend == '0') :
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir)
+        else:
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir)
+   
+        
+        if '1' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = STAR_CMD, JID=configFileDict["TRIM_WAIT"])
+            print(SLURM_CMD)
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = STAR_CMD)
+            print(SLURM_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        MAP_JID_LIST.append(catchJID(out))
+        
+        configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bam_dir"]),configFileDict['uid'],out))
+    
+    MAP_WAIT = ",".join(MAP_JID_LIST)
+    return MAP_WAIT
+
+
+
 def submitPCRduplication(configFileDict,BAM_FILES):
     """[Submits jobs for marking PCR duplicated reads using PICARD]
 
@@ -277,8 +326,6 @@ def submitPeakCalling(configFileDict,BED_FILES):
     PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
     del PEAK_CALLING_JID_LIST
     return PEAK_CALLING_WAIT
-
-
 
 
 def submitJobCheck(configFileDict, log_key, wait_key):
