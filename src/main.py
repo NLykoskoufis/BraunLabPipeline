@@ -11,7 +11,7 @@ import glob
 from datetime import datetime
 from pipeline_tools.slurmTools import catchJID
 import json
-from pipeline_tools.submitSteps import submitMappingSTAR
+from pipeline_tools.submitSteps import submitJobCheck, submitMappingSTAR
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -115,7 +115,7 @@ elif configFileDict['technology'] == "ChIPSeq":
         task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
-        task_list = ['2','4','9','report']
+        task_list = ['1', '1.1', '2', '9', 'report']
     if '3' in task_list or '4' in task_list: 
         vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
     if '8' in task_list:
@@ -380,11 +380,28 @@ if '8' in task_list:
         else: 
             createDir(configFileDict['peaks_dir'])
             createLog(configFileDict['peaks_dir'])
-    elif configFileDict['technology'] == "RNAseq":
-        print("WORK IN PROGRESS")
-        print("RNAseq mapping")
     else: 
-        vrb.error("You need to specify a technology, either ATACseq, ChIPseq or RNAseq")
+        vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
+
+if '9' in task_list: # EXON QUANTIFICATION 
+    if configFileDict['technology'] != "RNAseq": 
+        vrb.warning("This step performs exon quantification but it appears you are not using RNAseq data. Please either change the technology to RNAseq or make sure you are using RNAseq data.")
+    if '2' not in task_list: 
+            if not args.bam_dir: 
+                vrb.error("You need to specify a bam directory")
+            else: 
+                configFileDict['bam_dir'] = args.bam_dir
+        if args.output_dir: 
+            print("You specified an output directory. The pipeline will therefore not create one.")
+            configFileDict['quantification_dir'] = f"{args.output_dir}/quantification"
+        else: 
+            configFileDict['quantification_dir'] = f"{args.raw_dir}/quantification"
+        if checkDir(configFileDict['quantification_dir']): 
+            vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+        else: 
+            createDir(configFileDict['quantification_dir'])
+            createLog(configFileDict['quantification_dir'])
+
 
 
 if 'report' in task_list: 
@@ -500,6 +517,7 @@ if '3' in task_list:
     task_dico['3'] = "PCR_DUPLICATION_WAIT"
     
     task_log_dico['3'] = 'pcr_log_files'
+
 # ===========================================================================================================
 STEP4 = "Filtering reads and indexing bam file"
 # ===========================================================================================================  
@@ -641,6 +659,34 @@ if '8' in task_list:
     task_dico["8"] = "PEAK_CALLING_WAIT"
     
     task_log_dico['8'] = 'peak_log_files'
+
+  
+# ===========================================================================================================
+STEP9 = "PEAK CALLING - EXCLUSIVE FOR RNASEQ DATA"
+# ===========================================================================================================
+
+if '9' in task_list:
+    vrb.bullet("Running exon quantification\n")
+    configFileDict['quant_log_files'] = []
+    if '2' not in task_list:
+        BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
+        QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
+        configFileDict['QUANT_WAIT'] = QUANT_WAIT
+    else:
+        BAM_FILES = ["{}/{}.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+        QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
+        configFileDict['QUANT_WAIT'] = QUANT_WAIT
+    submitJobCheck(configFileDict, 'quant_log_files',QUANT_WAIT)
+    task_dico['9'] = 'QUANT_WAIT'
+    task_log_dico['9'] = 'quant_log_files'
+
+
+
+
+
+
+
+
 
 
 # ===========================================================================================================
