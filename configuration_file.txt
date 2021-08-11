@@ -88,7 +88,7 @@ extend_reads,150
 peak_calling,--format BED --nomodel -g mm -B 
 
 #### EXON QUANTIFICATION OPTIONS ####
-quantOptions, 
+quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
 #####################################
 
 #Perform fastq QC using FastQC (0=no, 1=yes)
@@ -161,6 +161,9 @@ star,/srv/beegfs/scratch/groups/funpopgen/Tools/STAR-2.7.5c/bin/Linux_x86_64_sta
 
 #Path to samtools
 samtools,/home/users/l/lykoskou/Software/samtools-1.12/samtools
+
+#QTLtools
+QTLtools, /srv/beegfs/scratch/groups/funpopgen/bin/QTLtools
 
 #Rscript
 Rscript,/opt/ebsofts/R/3.6.2-foss-2019b/bin/Rscript

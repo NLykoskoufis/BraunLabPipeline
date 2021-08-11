@@ -100,9 +100,9 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX):
 
 
         if(pairend == '0') :
-            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir)
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}.Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
         else:
-            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir)
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}.Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
    
         
         if '1' in configFileDict['task_list']: 
@@ -422,7 +422,7 @@ def submitMultiQC(configFileDict):
     INPUT_DIR = configFileDict['fastQC_dir']
     OUTPUT_DIR = INPUT_DIR
     cmd = "{multiqc} -s -o {output_dir} {input_dir}".format(multiqc = configFileDict['multiQC'],output_dir = OUTPUT_DIR, input_dir = INPUT_DIR)
-    SLURM_CMD = SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['FASTQC_WAIT'], cmd = cmd)
+    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['FASTQC_WAIT'], cmd = cmd)
     print(SLURM_CMD)
     
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
@@ -434,3 +434,30 @@ def submitMultiQC(configFileDict):
     del MFASTQC_JID_LIST
     return MFASTQC_WAIT
 
+def submitExonQuantification(configFileDict, BAM_FILES):
+    QUANT_JID_LIST = []
+    OUTPUT_DIR = configFileDict['quantification_dir']
+    
+    
+    for bam in BAM_FILES: 
+        sampleName = os.path.basename(bam).split(".")[0]
+        outputFile = "{outputDir}/{smp}".format(outputDir = OUTPUT_DIR, smp = sampleName)
+        print(sampleName)
+        print(outputFile)
+        
+        QUAN_CMD = "{qtltools} quan --gtf {annotation} --bam {bam} --out-prefix {outputPrefix} --samples {smp} {quantOptions}".format(qtltools = configFileDict['QTLtools'], annotation = configFileDict['annotation'], bam = bam, outputPrefix = outputFile, smp = sampleName, quantOptions = configFileDict['quantOptions'])
+        
+        if '2' in configFileDict['task_list'] : 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'])
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        QUANT_JID_LIST.append(catchJID(out))
+            
+        configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
+        
+    QUANT_WAIT = ",".join(QUANT_JID_LIST)
+    del QUANT_JID_LIST
+    return QUANT_WAIT
+                
+        

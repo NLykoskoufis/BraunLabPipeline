@@ -387,20 +387,20 @@ if '9' in task_list: # EXON QUANTIFICATION
     if configFileDict['technology'] != "RNAseq": 
         vrb.warning("This step performs exon quantification but it appears you are not using RNAseq data. Please either change the technology to RNAseq or make sure you are using RNAseq data.")
     if '2' not in task_list: 
-            if not args.bam_dir: 
-                vrb.error("You need to specify a bam directory")
-            else: 
-                configFileDict['bam_dir'] = args.bam_dir
-        if args.output_dir: 
-            print("You specified an output directory. The pipeline will therefore not create one.")
-            configFileDict['quantification_dir'] = f"{args.output_dir}/quantification"
+        if not args.bam_dir: 
+            vrb.error("You need to specify a bam directory")
         else: 
-            configFileDict['quantification_dir'] = f"{args.raw_dir}/quantification"
-        if checkDir(configFileDict['quantification_dir']): 
-            vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
-        else: 
-            createDir(configFileDict['quantification_dir'])
-            createLog(configFileDict['quantification_dir'])
+            configFileDict['bam_dir'] = args.bam_dir
+    if args.output_dir: 
+        print("You specified an output directory. The pipeline will therefore not create one.")
+        configFileDict['quantification_dir'] = f"{args.output_dir}/quantification"
+    else: 
+        configFileDict['quantification_dir'] = f"{args.raw_dir}/quantification"
+    if checkDir(configFileDict['quantification_dir']): 
+        vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+    else: 
+        createDir(configFileDict['quantification_dir'])
+        createLog(configFileDict['quantification_dir'])
 
 
 
@@ -429,7 +429,6 @@ vrb.bullet(f"Unique ID of this run: {str(configFileDict['uid'])}\n")
 vrb.bullet(task_list)
 task_dico = {} ### Dictionary containing for each task the wait_key so that I can automatically find out which is the last run task and get the wait_key instead of checking all of them one by one with if statements.
 task_log_dico = {}
-
 
 
 # ===========================================================================================================
@@ -497,6 +496,7 @@ if '2' in task_list:
     task_dico['2'] = "MAP_WAIT"
     
     task_log_dico['2'] = 'mapping_log_files'
+
 # ===========================================================================================================
 STEP3 = "Marking duplicated reads"
 # ===========================================================================================================
@@ -636,8 +636,8 @@ if '7' in task_list:
         EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
         configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
     submitJobCheck(configFileDict,'extend_log_files',EXT_BED_WAIT)   
-    task_dico["7"] = "EXT_BED_WAIT"
     
+    task_dico["7"] = "EXT_BED_WAIT"
     task_log_dico['7'] = 'extend_log_files'
     
 # ===========================================================================================================
@@ -656,8 +656,8 @@ if '8' in task_list:
         PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
         configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
     submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
-    task_dico["8"] = "PEAK_CALLING_WAIT"
     
+    task_dico["8"] = "PEAK_CALLING_WAIT"
     task_log_dico['8'] = 'peak_log_files'
 
   
@@ -673,10 +673,11 @@ if '9' in task_list:
         QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
         configFileDict['QUANT_WAIT'] = QUANT_WAIT
     else:
-        BAM_FILES = ["{}/{}.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+        BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
         QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
         configFileDict['QUANT_WAIT'] = QUANT_WAIT
     submitJobCheck(configFileDict, 'quant_log_files',QUANT_WAIT)
+    
     task_dico['9'] = 'QUANT_WAIT'
     task_log_dico['9'] = 'quant_log_files'
 
