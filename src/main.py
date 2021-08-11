@@ -666,7 +666,7 @@ STEP9 = "PEAK CALLING - EXCLUSIVE FOR RNASEQ DATA"
 # ===========================================================================================================
 
 if '9' in task_list:
-    vrb.bullet("Running exon quantification\n")
+    vrb.bullet("Running exon/gene quantification\n")
     configFileDict['quant_log_files'] = []
     if '2' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
