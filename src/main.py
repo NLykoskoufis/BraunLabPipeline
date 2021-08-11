@@ -64,7 +64,7 @@ parser.add_argument('-v', dest='version', action='store_true', help='Display pip
 #If user is asking for version
 if len(sys.argv) > 1:
     if sys.argv[1] == '-v':
-        print('Pipeline version 1.00\n')
+        print('Pipeline version 1.00\n### BETA VERSION. USE IT WITH CAUTION!!!')
         sys.exit(0)
 
 parser.add_argument('-raw', '--raw-dir', dest='raw_dir',required=True, type=str, help='Absolute path to the raw directory')
