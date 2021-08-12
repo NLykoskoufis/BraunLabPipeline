@@ -14,8 +14,8 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 #### NEEDED FILES PATH #####
 
 ### REFERENCE GENOMES ####
-#reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
-reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/STAR_v2.7.5c/GRCh37_gencode.v19_50bp-readlength
+reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+#reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/STAR_v2.7.5c/GRCh37_gencode.v19_50bp-readlength
 ##########################
 
 #### 
@@ -31,7 +31,7 @@ pairend,1
 
 
 # Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
-technology,RNAseq
+technology,ATACseq
 
 #### READ TRIMMING OPTIONS ####
 #Example of how a cutadapt commands looks like 
@@ -42,8 +42,8 @@ trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGC
 
 #### MAPPER #### 
 #Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
-mapper,STAR 
-#mapper,bowtie2
+#mapper,STAR 
+mapper,bowtie2
 ################
 
 

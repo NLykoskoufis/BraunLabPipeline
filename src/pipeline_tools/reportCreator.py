@@ -57,8 +57,6 @@ def copyPlot(configFileDict, task_dico):
     return cp_plots 
 
 
-
-
 def getAllExitCodesPerTask(configFileDict,task_dico):
     dico = defaultdict(dict)
     for task in configFileDict['task_list']:
