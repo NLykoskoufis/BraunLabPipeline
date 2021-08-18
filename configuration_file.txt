@@ -14,21 +14,22 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 #### NEEDED FILES PATH #####
 
 ### REFERENCE GENOMES ####
-reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
 #reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/STAR_v2.7.5c/GRCh37_gencode.v19_50bp-readlength
+reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+
+genomeFileSize,/home/users/l/lykoskou/Software/bedtools2/genomes/mouse.mm10.genome
 ##########################
 
-#### 
-genomeFileSize,/home/users/l/lykoskou/Software/bedtools2/genomes/mouse.mm10.genome
+
 
 #### ANNOTATION FILES #####
 annotation, /srv/beegfs/scratch/groups/funpopgen/data/annotations/gencode.v19.annotation.nochr.gtf
 ###########################
 
-
+#### PAIRED-END or NOT ####
 #Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
 pairend,1
-
+############################
 
 # Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
 technology,ATACseq
@@ -76,26 +77,26 @@ bowtie_parameters, -p 8 --maxins 2000 -N 1
 PCR_duplicates_removal,-h -F 1796 -q20
 #########################################
 
+##### BAM2BW #####
 #Deeptools to create normalized .bw files 
 #bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max --extendReads 200
 bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
+###################
 
-#Extend reads. Default extension is 150 but you can change the value. This step runs a bash script to extend reads.
+
+#### Extend reads ####
+# Default extension is 150 but you can change the value. This step runs a bash script to extend reads.
 extend_reads,150
+######################
 
-#Peak calling with MACS2
+#### Peak calling ####
 #Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
 peak_calling,--format BED --nomodel -g mm -B 
+#######################
 
 #### EXON QUANTIFICATION OPTIONS ####
 quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
 #####################################
-
-#Perform fastq QC using FastQC (0=no, 1=yes)
-fastq_qc,1
-
-##Draw graphs for mapping qc (0=no, 1=yes)
-mapping_qc_graphs,1
 
 
 #######################################################################################################
@@ -113,30 +114,6 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #This part, in coma separated value format, is used by main.py to set executable directory
 #In each lane, the first word is a keyword that should not be changed, the second part after
 #the comma is the path to the corresponding executable.
-
-#mail_script 
-mail_script, ,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/sendEmail.py
-
-#junction Merge script 
-junctionMerge_script, /srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/merge_junctions.pl
-
-#extendReads script 
-extendReadsScript,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/extendBedReads.sh
-
-#ATACseqQC
-ATACseqQC,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/fragmentSizeDist.R
-
-#bamQC,
-bamQC,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/atacQC_stats.R
-
-#bam2bed script 
-bam2bed_script,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/scripts/bam2bed.sh
-
-#jobCheck 
-jobCheck,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/jobCheck.py
-
-#report_script
-report,/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/braunATACpipeline/src/pipeline_tools/reportCreator.py
 
 #FastQC 
 FastQC,/home/users/l/lykoskou/Software/FastQC/fastqc

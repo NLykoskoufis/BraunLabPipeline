@@ -110,12 +110,15 @@ else:
 """
 
 
-
-
-
-
+configFileDict['mail_script'] = f"{pipeline_tools_path}/sendEmail.py"
+configFileDict['jobCheck'] = f"{pipeline_tools_path}/jobCheck.py"
+configFileDict['report'] = f"{pipeline_tools_path}/reportCreator.py"
+configFileDict['junctionMerge_script'] = f"{scripts_path}/merge_junctions.pl"
+configFileDict['extendReadsScript'] = f"{scripts_path}/extendBedReads.sh"
+configFileDict['ATACseqQC'] = f"{scripts_path}/fragmentSizeDist.R"
+configFileDict['bamQC'] = f"{scripts_path}/atacQC_stats.R"
+configFileDict['bam2bed_script'] = f"{scripts_path}/bam2bed.sh"
 configFileDict['zipDirectoryScript'] = f"{pipeline_tools_path}/zipDirectory.py"
-
 
 
 
