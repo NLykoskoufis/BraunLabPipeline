@@ -16,8 +16,10 @@ from pipeline_tools.submitSteps import submitJobCheck, submitMappingSTAR
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 utils_tools_path = os.path.abspath(pipeline_path+"/utils")
+scripts_path = os.path.abspath(pipeline_path+"/scripts")
 sys.path.append(pipeline_tools_path)
 sys.path.append(utils_tools_path)
+sys.path.append(scripts_path)
 from writeEmail import writeEmail
 from configParser import getConfigDict, dict2File
 from fastqTools import getFastqPrefix
@@ -55,6 +57,7 @@ ATACseq pipeline for mapping, peak calling, etc
 6. CONVERT bam2bed ==> Wait for 6 to be done
 7. Bed file with extended reads ==> Wait for 8
 8. PEAK Calling ==> Wait for 7
+8.1 GET Counts ==> Wait for 8
 #===============================================================================
 """
 
@@ -71,6 +74,8 @@ parser.add_argument('-raw', '--raw-dir', dest='raw_dir',required=True, type=str,
 parser.add_argument('-fastq', '--fast-qdir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 #parser.add_argument('-trimfastq', '--trim-fastq-dir', dest='trimmed_fastq_dir', type=str, help='Absolut path trimmed fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 parser.add_argument('-bam', '--bam-dir', dest='bam_dir', type=str, help='Path bam diretory, is multiple, separate with space.')
+parser.add_argument('-peak', '--peak-dir', dest='peaks_dir', type=str, help='Path peak diretory, is multiple, separate with space.')
+
 #parser.add_argument('-sortedBam','--sorted-bam-dir', dest='sorted_bam_dir', type=str, help='Path to sorted bam directory, if not set, first bam directory is used.')
 parser.add_argument('-eqd','--quant-dir', '-quantification_dir', dest='eq_dir', type=str, help='Absolut path peak calling diretory')
 parser.add_argument('-bed', '--bed-dir', dest='bed_dir', type=str, help='Absolut path of where to save/read bed files')
@@ -130,7 +135,7 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','report']
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1','report']
 elif configFileDict['technology'] == "ChIPSeq":
     if 'all' in task_list: 
         task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
@@ -401,6 +406,37 @@ if '8' in task_list:
     else: 
         vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
 
+if '8.1' in task_list:
+    if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": 
+        if '8' not in task_list:
+            if not args.peaks_dir: 
+                vrb.error("You need to specify a bed directory")
+            else: 
+                configFileDict['peaks_dir'] = args.peaks_dir
+        if '7' not in task_list: 
+            if not args.bed_dir: 
+                vrb.error("You need to specify a bed directory")
+            else: 
+                configFileDict['extended_bed_dir'] = args.bed_dir
+                
+        if args.output_dir: 
+            print("You specified an output directory. The pipeline will therefore not create one.")
+            configFileDict['peakCounts_dir'] = f"{args.output_dir}/peakCounts"
+        else: 
+            configFileDict['peakCounts_dir'] = f"{args.raw_dir}/peakCounts"
+        if checkDir(configFileDict['peakCounts_dir']): 
+            vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
+        else: 
+            createDir(configFileDict['peakCounts_dir'])
+            createLog(configFileDict['peakCounts_dir'])
+    else: 
+        vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
+
+
+
+
+
+
 if '9' in task_list: # EXON QUANTIFICATION 
     if configFileDict['technology'] != "RNAseq": 
         vrb.warning("This step performs exon quantification but it appears you are not using RNAseq data. Please either change the technology to RNAseq or make sure you are using RNAseq data.")
@@ -665,7 +701,7 @@ STEP8 = "PEAK CALLING"
 if '8' in task_list: 
     vrb.bullet("Running peak calling\n")
     configFileDict['peak_log_files'] = []
-    if '6' not in task_list: 
+    if '7' not in task_list: 
         BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
         PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
         configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
@@ -677,10 +713,34 @@ if '8' in task_list:
     
     task_dico["8"] = "PEAK_CALLING_WAIT"
     task_log_dico['8'] = 'peak_log_files'
+    
+  
+# ===========================================================================================================
+STEP8_1 = "PEAK2COUNTS"
+# ===========================================================================================================
+
+if '8.1' in task_list: 
+    vrb.bullet("Running peak 2 Counts\n")
+    configFileDict['peak2Count_log_files'] = []
+    if '8' not in task_list : 
+        NARROWPEAK_FILES = glob.glob("{}/*.MACS/*.narrowPeak".format(configFileDict['peaks_dir']))
+    else: 
+        NARROWPEAK_FILES = ["{outputDir}/{samples}.MACS/{samples}_peaks.narrowPeak".format(outputDir = configFileDict['peaks_dir'], samples = i) for i in configFileDict['sample_prefix']]
+    if '7' not in task_list:
+        EXTENDED_BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+    else:
+        EXTENDED_BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
+    
+    PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,EXTENDED_BED_FILES)
+    configFileDict['PEAK2COUNT_CALLING_WAIT'] = PEAK2COUNT_CALLING_WAIT
+    submitJobCheck(configFileDict,'peak2Count_log_files',PEAK2COUNT_CALLING_WAIT)
+    
+    task_dico["8.1"] = "PEAK2COUNT_CALLING_WAIT"
+    task_log_dico['8.1'] = 'peak2Count_log_files'
 
   
 # ===========================================================================================================
-STEP9 = "PEAK CALLING - EXCLUSIVE FOR RNASEQ DATA"
+STEP9 = "EXON QUANTIFICATION - EXCLUSIVE FOR RNASEQ DATA"
 # ===========================================================================================================
 
 if '9' in task_list:

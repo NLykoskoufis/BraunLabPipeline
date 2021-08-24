@@ -328,6 +328,48 @@ def submitPeakCalling(configFileDict,BED_FILES):
     return PEAK_CALLING_WAIT
 
 
+
+def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES):
+    """[Submits jobs peak2Counts]
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        NARROWPEAK_FILES [str]: Absolute path where BAM FILES are and where to write them. 
+
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """
+    
+    OUTPUT_DIR = configFileDict['peakCounts_dir']
+    
+    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed &&  {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], extendedBedFiles = " ".join(EXTENDED_BED_FILES))
+    peak_cmd = []
+    for bed in EXTENDED_BED_FILES: 
+        outputFile = OUTPUT_DIR + "/" + os.path.basename(bed).replace("extendedReads.bed", "count")
+        peak_cmd.append("{bedtools} intersect -a {outputDir}/merged_peaks_ALLsamples.bed -b {bed} -c > {outputFile}".format(bedtools = configFileDict['bedtools'], outputDir = OUTPUT_DIR, bed = bed, outputFile=outputFile))
+        
+    CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd)
+    
+    wait_condition = ""
+     
+    if '8' in configFileDict["task_list"] and '7' in configFileDict["task_list"]: 
+        wait_condition = configFileDict['PEAK_CALLING_WAIT'] + "," + configFileDict['EXT_BED_WAIT']
+    
+    if '8' not in configFileDict["task_list"] and '7' not in configFileDict["task_list"]:
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs)
+    else:
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs, JID=wait_condition)
+    print(SLURM_CMD)
+    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+    PEAK_CALLING_JID_LIST = catchJID(out)
+    
+    configFileDict['peak2Count_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peakCounts_dir"]),configFileDict['uid'],out))
+        
+    PEAK_CALLING_WAIT = PEAK_CALLING_JID_LIST
+    del PEAK_CALLING_JID_LIST
+    return PEAK_CALLING_WAIT
+
+
 def submitJobCheck(configFileDict, log_key, wait_key):
     log_files = configFileDict[log_key]
     for file in log_files: 
