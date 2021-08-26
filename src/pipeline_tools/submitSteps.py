@@ -377,6 +377,17 @@ def submitJobCheck(configFileDict, log_key, wait_key):
         SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 
+def submitJobCheck2(configFileDict, logFiles, wait_key):
+    #log_files = configFileDict[log_key]
+    cmd = []
+    for file in logFiles:
+        cmd.append("python3 {jobCheck} -w -log {file}".format(jobCheck=configFileDict['jobCheck'], file=file))
+    
+    cmd = "; ".join(cmd)
+    
+    SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
+    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    #print(SLURM_CMD)
 
 def submitATACseqQC(configFileDict, BAM_FILES):
     ATACQC_JID_LIST = []

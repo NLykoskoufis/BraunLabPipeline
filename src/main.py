@@ -11,7 +11,7 @@ import glob
 from datetime import datetime
 from pipeline_tools.slurmTools import catchJID
 import json
-from pipeline_tools.submitSteps import submitJobCheck, submitMappingSTAR
+from pipeline_tools.submitSteps import submitJobCheck, submitJobCheck2, submitMappingSTAR
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -481,7 +481,7 @@ if '1' in task_list:
     configFileDict['sample_prefix'] = FASTQ_FILES
     TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
     configFileDict['TRIM_WAIT'] = TRIM_WAIT
-    submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
+    #submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
     task_dico['1'] = "TRIM_WAIT"
     
     task_log_dico['1'] = 'trim_log_files'
@@ -501,7 +501,7 @@ if '1.1' in task_list:
     vrb.bullet("Running multiqc to get all FastQC in a single report\n")
     configFileDict['multiqc_log_files'] = []
     MFASTQC_WAIT = submitMultiQC(configFileDict)
-    submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)    
+    #submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)    
     task_log_dico['1.1'] = 'fastqQC_log_files'
     
 
@@ -529,7 +529,7 @@ if '2' in task_list:
         print("You need to specify a mapper")
     
     configFileDict['MAP_WAIT'] = MAP_WAIT                
-    submitJobCheck(configFileDict,'mapping_log_files',MAP_WAIT)
+    #submitJobCheck(configFileDict,'mapping_log_files',MAP_WAIT)
     task_dico['2'] = "MAP_WAIT"
     
     task_log_dico['2'] = 'mapping_log_files'
@@ -539,18 +539,18 @@ STEP3 = "Marking duplicated reads"
 # ===========================================================================================================
         
 if '3' in task_list:
-    print(" * Running PCR duplication detection using PICARD\n")
+    vrb.bullet("Running PCR duplication detection using PICARD\n")
     configFileDict['pcr_log_files'] = []
     if '1' in task_list or '2' in task_list:
         BAM_FILES = ["{}/{}.sortedByCoord.bam".format(configFileDict['sorted_bam_dir'],i) for i in configFileDict['sample_prefix']]
-        print(BAM_FILES)
+        
         PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
         configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
     else:        
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['sorted_bam_dir']))
         PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
         configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
-    submitJobCheck(configFileDict,'pcr_log_files',PCR_DUPLICATION_WAIT)
+    #submitJobCheck(configFileDict,'pcr_log_files',PCR_DUPLICATION_WAIT)
     task_dico['3'] = "PCR_DUPLICATION_WAIT"
     
     task_log_dico['3'] = 'pcr_log_files'
@@ -570,7 +570,7 @@ if '4' in task_list:
         BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
         FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
         configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
-    submitJobCheck(configFileDict,'filtering_log_files',FILTER_BAM_WAIT)
+    #submitJobCheck(configFileDict,'filtering_log_files',FILTER_BAM_WAIT)
     task_dico['4'] = "FILTER_BAM_WAIT"
     
     task_log_dico['4'] = 'filtering_log_files'
@@ -590,7 +590,7 @@ if '4.1' in task_list:
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES)
         configFileDict['ATACQC_WAIT'] = ATACQC_WAIT
-    submitJobCheck(configFileDict,'atacQC_log_files',ATACQC_WAIT)
+    #submitJobCheck(configFileDict,'atacQC_log_files',ATACQC_WAIT)
     task_dico['4.1'] = "ATACQC_WAIT"
 
     task_log_dico['4.1'] = 'atacQC_log_files'
@@ -610,7 +610,7 @@ if '4.2' in task_list:
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
         configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
-    submitJobCheck(configFileDict,'bamQC_log_files',BAMQC_WAIT)
+    #submitJobCheck(configFileDict,'bamQC_log_files',BAMQC_WAIT)
     task_dico['4.2'] = "BAMQC_WAIT"
 
     task_log_dico['4.2'] = 'bamQC_log_files'
@@ -630,7 +630,7 @@ if '5' in task_list:
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
         configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
-    submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
+    #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
     task_dico['5'] = "BAM2BW_WAIT"
 
     task_log_dico['5'] = 'bw_log_files'
@@ -672,7 +672,7 @@ if '7' in task_list:
         BED_FILES = ["{}/{}.bed".format(configFileDict['bed_dir'], i) for i in configFileDict['sample_prefix']]
         EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
         configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
-    submitJobCheck(configFileDict,'extend_log_files',EXT_BED_WAIT)   
+    #submitJobCheck(configFileDict,'extend_log_files',EXT_BED_WAIT)   
     
     task_dico["7"] = "EXT_BED_WAIT"
     task_log_dico['7'] = 'extend_log_files'
@@ -692,7 +692,7 @@ if '8' in task_list:
         BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
         PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
         configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
-    submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
+    #submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
     
     task_dico["8"] = "PEAK_CALLING_WAIT"
     task_log_dico['8'] = 'peak_log_files'
@@ -716,7 +716,7 @@ if '8.1' in task_list:
     
     PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,EXTENDED_BED_FILES)
     configFileDict['PEAK2COUNT_CALLING_WAIT'] = PEAK2COUNT_CALLING_WAIT
-    submitJobCheck(configFileDict,'peak2Count_log_files',PEAK2COUNT_CALLING_WAIT)
+    #submitJobCheck(configFileDict,'peak2Count_log_files',PEAK2COUNT_CALLING_WAIT)
     
     task_dico["8.1"] = "PEAK2COUNT_CALLING_WAIT"
     task_log_dico['8.1'] = 'peak2Count_log_files'
@@ -737,12 +737,29 @@ if '9' in task_list:
         BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
         QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
         configFileDict['QUANT_WAIT'] = QUANT_WAIT
-    submitJobCheck(configFileDict, 'quant_log_files',QUANT_WAIT)
+    #submitJobCheck(configFileDict, 'quant_log_files',QUANT_WAIT)
     
     task_dico['9'] = 'QUANT_WAIT'
     task_log_dico['9'] = 'quant_log_files'
 
+# ===========================================================================================================
+STEP_JOBCHECK = "CHECKING SLURM OUTPUT FOR SUCCESSFUL EXIT CODES"
+# ===========================================================================================================
 
+wait_condition = []
+LOG_FILES = []
+for task in task_list: 
+    if task == "report": 
+        pass 
+    else: 
+        wait_condition.append(configFileDict[task_dico[task]])
+        LOG_FILES.append(configFileDict[task_log_dico[task]])
+
+wait_condition = ",".join(wait_condition)
+logFiles = [item for sublist in LOG_FILES for item in sublist]
+        
+submitJobCheck2(configFileDict,logFiles, wait_condition)
+        
 
 
 
@@ -772,7 +789,6 @@ if 'report' in task_list:
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
         
         wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in task_list if lst != "report"])
-        print(wait_condition)
 
         json1 = f"{output_dir}/configFileDict.json"
         json2 = f"{output_dir}/task_log_dico.json"
@@ -783,7 +799,7 @@ if 'report' in task_list:
             zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir = configFileDict['report_dir'], raw_dir = outputDir)
             
         
-        CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = output_dir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
+        CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = output_dir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
         
         # Create .sh file to run the command. 
         
