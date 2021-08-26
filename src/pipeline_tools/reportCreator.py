@@ -85,7 +85,7 @@ def main(configFileDict_file, task_dico_file, reportName):
     task_dico = readDictFromFile(task_dico_file)
     #print(configFileDict)
     
-    TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling"}
+    TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling", "8.1":"Peak to Counts"}
     
     
     #1 combine bamQC data

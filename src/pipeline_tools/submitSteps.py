@@ -26,7 +26,7 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
         
         
         SLURM_CMD = "{wsbatch} {slurm} -o {trimmed_log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_trim"], trimmed_log_dir = "{}/log".format(configFileDict["trimmed_fastq_dir"]), uid = configFileDict["uid"], cmd = TRIM_CMD)
-        print(SLURM_CMD)
+        #print(SLURM_CMD)
         
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         TRIM_JID_LIST.append(catchJID(out))
@@ -58,10 +58,10 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
         
         if '1' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = MAP_CMD, JID=configFileDict["TRIM_WAIT"])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = MAP_CMD)
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         MAP_JID_LIST.append(catchJID(out))
         
@@ -107,10 +107,10 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX):
         
         if '1' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = STAR_CMD, JID=configFileDict["TRIM_WAIT"])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = STAR_CMD)
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         MAP_JID_LIST.append(catchJID(out))
         
@@ -137,14 +137,14 @@ def submitPCRduplication(configFileDict,BAM_FILES):
     for bam in BAM_FILES: 
         input = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.sortedByCoord.Picard.bam".format(OUTPUT_DIR,input)
-        print(OUTPUT_FILE)
+        
         METRIX_FILE = "{}/{}.metrix".format(OUTPUT_DIR,input)
-        print(METRIX_FILE)
+        
         PCR_CMD = "{PICARD} MarkDuplicates I={input} O={output} M={metrix}".format(PICARD=configFileDict['picard'], input=bam, output=OUTPUT_FILE, metrix=METRIX_FILE)
-        print(PCR_CMD)
+        
         if '2' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['MAP_WAIT'])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD)
         
@@ -178,7 +178,7 @@ def submitFilteringBAM(configFileDict, BAM_FILES):
         
         if '3' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD)
             
@@ -214,10 +214,10 @@ def submitBAM2BW(configFileDict, BAM_FILES):
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD)
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         BW_JID_LIST.append(catchJID(out))
 
@@ -249,10 +249,10 @@ def submitBAM2BED(configFileDict, BAM_FILES):
         
         if '4' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BED_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BED_CMD)
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
             
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         BAM2BED_JID_LIST.append(catchJID(out))
@@ -359,7 +359,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES):
         SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs)
     else:
         SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs, JID=wait_condition)
-    print(SLURM_CMD)
+    #print(SLURM_CMD)
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
     PEAK_CALLING_JID_LIST = catchJID(out)
     
@@ -388,10 +388,10 @@ def submitATACseqQC(configFileDict, BAM_FILES):
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = ATACQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = ATACQC_CMD)
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         ATACQC_JID_LIST.append(catchJID(out))
 
@@ -416,10 +416,10 @@ def submitBamQC(configFileDict, BAM_FILES):
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD)
-            print(SLURM_CMD)
+            #print(SLURM_CMD)
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         BAMQC_JID_LIST.append(catchJID(out))
 
@@ -446,10 +446,10 @@ def submitFastQC(configFileDict):
             FASTQC_CMD = "{fastqc} -o {output_dir} {fastq}".format(fastqc = configFileDict['FastQC'], output_dir = OUTPUT_DIR, fastq = fastq)
             if '1' in configFileDict['task_list']:
                 SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['TRIM_WAIT'], cmd = FASTQC_CMD)
-                print(SLURM_CMD)
+                #print(SLURM_CMD)
             else: 
                 SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'], cmd = FASTQC_CMD)
-                print(SLURM_CMD)
+                #print(SLURM_CMD)
             out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
             FASTQC_JID_LIST.append(catchJID(out))
             
@@ -465,7 +465,7 @@ def submitMultiQC(configFileDict):
     OUTPUT_DIR = INPUT_DIR
     cmd = "{multiqc} -s -o {output_dir} {input_dir}".format(multiqc = configFileDict['multiQC'],output_dir = OUTPUT_DIR, input_dir = INPUT_DIR)
     SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['FASTQC_WAIT'], cmd = cmd)
-    print(SLURM_CMD)
+    #print(SLURM_CMD)
     
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
     MFASTQC_JID_LIST.append(catchJID(out))
@@ -484,8 +484,8 @@ def submitExonQuantification(configFileDict, BAM_FILES):
     for bam in BAM_FILES: 
         sampleName = os.path.basename(bam).split(".")[0]
         outputFile = "{outputDir}/{smp}".format(outputDir = OUTPUT_DIR, smp = sampleName)
-        print(sampleName)
-        print(outputFile)
+        #print(sampleName)
+        #print(outputFile)
         
         QUAN_CMD = "{qtltools} quan --gtf {annotation} --bam {bam} --out-prefix {outputPrefix} --sample {smp} {quantOptions}".format(qtltools = configFileDict['QTLtools'], annotation = configFileDict['annotation'], bam = bam, outputPrefix = outputFile, smp = sampleName, quantOptions = configFileDict['quantOptions'])
         

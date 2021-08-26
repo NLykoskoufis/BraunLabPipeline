@@ -39,27 +39,10 @@ SCRIPT_NAME = "main.py"
 @author: Nikolaos Lykoskoufis
 @date: 7th of July
 @copyright: Copyright 2021, University of Geneva
-ATACseq pipeline for mapping, peak calling, etc
+Pipeline for Processing ATACseq, ChIP-seq and RNAseq data
 #===============================================================================
 """
 
-
-"""
-#===============================================================================
-###### STEPS PERFORMED BY PIPELINE ######
-
-1. TRIM reads
-2. MAP reads to reference genome & SORT ==> Wait for 1 is 1 is needed to run
-3. Mark PCR duplicates ==> WAIT FOR 2
-4. REMOVE PCR duplicates, vendor QUAL control and secondary alignment and INDEX ==> WAIT FOR 3
-4.1 Create Fragment Size Distribution plots
-5. CREATE .bw for visualization <INDEPENDENT STEP FROM 8,9,10> => ONLY NEED TO WAIT FOR 6 TO BE DONE. 
-6. CONVERT bam2bed ==> Wait for 6 to be done
-7. Bed file with extended reads ==> Wait for 8
-8. PEAK Calling ==> Wait for 7
-8.1 GET Counts ==> Wait for 8
-#===============================================================================
-"""
 
 
 parser = argparse.ArgumentParser(description='Pipeline to process data from illumina sequencers.')
@@ -525,7 +508,7 @@ if '1.1' in task_list:
 #  ===========================================================================================================
 STEP2 = "Mapping reads / sorting bam files"
 # ===========================================================================================================
-                
+       
 if '2' in task_list: 
     vrb.bullet("Running mapping of reads.\n")
     configFileDict['mapping_log_files'] = []
