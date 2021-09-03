@@ -1,0 +1,8 @@
+#[2021-09-03 01:37:25 PM]
+cd ../Tools/braunATACpipeline
+#[2021-09-03 01:37:26 PM]
+lh
+#[2021-09-03 01:37:32 PM]
+git pull origin
+#[2021-09-03 01:37:49 PM]
+git status

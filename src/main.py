@@ -495,7 +495,7 @@ if '1.1' in task_list:
     configFileDict['fastqQC_log_files'] = []
     FASTQC_WAIT = submitFastQC(configFileDict)
     configFileDict['FASTQC_WAIT'] = FASTQC_WAIT
-    submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
+    #submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
     task_dico['1.1'] = "FASTQC_WAIT"
     
     vrb.bullet("Running multiqc to get all FastQC in a single report\n")
@@ -651,7 +651,7 @@ if '6' in task_list: # Need to wait for '4' or none
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
         configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
-    submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
+    #submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
     task_dico['6'] = "BAM2BED_WAIT"
     
     task_log_dico['6'] = 'bam2bed_log_files'
@@ -721,7 +721,7 @@ if '8.1' in task_list:
     task_dico["8.1"] = "PEAK2COUNT_CALLING_WAIT"
     task_log_dico['8.1'] = 'peak2Count_log_files'
 
-  
+
 # ===========================================================================================================
 STEP9 = "EXON QUANTIFICATION - EXCLUSIVE FOR RNASEQ DATA"
 # ===========================================================================================================
