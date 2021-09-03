@@ -54,7 +54,7 @@ if len(sys.argv) > 1:
         sys.exit(0)
 
 parser.add_argument('-raw', '--raw-dir', dest='raw_dir',required=True, type=str, help='Absolute path to the raw directory')
-parser.add_argument('-fastq', '--fast-qdir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
+parser.add_argument('-fastq', '--fastq-dir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 #parser.add_argument('-trimfastq', '--trim-fastq-dir', dest='trimmed_fastq_dir', type=str, help='Absolut path trimmed fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 parser.add_argument('-bam', '--bam-dir', dest='bam_dir', type=str, help='Path bam diretory, is multiple, separate with space.')
 parser.add_argument('-peak', '--peak-dir', dest='peaks_dir', type=str, help='Path peak diretory, is multiple, separate with space.')
@@ -124,7 +124,7 @@ elif configFileDict['technology'] == "ChIPSeq":
         task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
-        task_list = ['1', '1.1', '2', '9', 'report']
+        task_list = ['1.1', '2', '9', 'report']
     if '3' in task_list or '4' in task_list: 
         vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
     if '8' in task_list:
@@ -495,7 +495,7 @@ if '1.1' in task_list:
     configFileDict['fastqQC_log_files'] = []
     FASTQC_WAIT = submitFastQC(configFileDict)
     configFileDict['FASTQC_WAIT'] = FASTQC_WAIT
-    submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
+    #submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
     task_dico['1.1'] = "FASTQC_WAIT"
     
     vrb.bullet("Running multiqc to get all FastQC in a single report\n")
@@ -651,7 +651,7 @@ if '6' in task_list: # Need to wait for '4' or none
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
         configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
-    submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
+    #submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
     task_dico['6'] = "BAM2BED_WAIT"
     
     task_log_dico['6'] = 'bam2bed_log_files'
@@ -721,7 +721,7 @@ if '8.1' in task_list:
     task_dico["8.1"] = "PEAK2COUNT_CALLING_WAIT"
     task_log_dico['8.1'] = 'peak2Count_log_files'
 
-  
+
 # ===========================================================================================================
 STEP9 = "EXON QUANTIFICATION - EXCLUSIVE FOR RNASEQ DATA"
 # ===========================================================================================================
