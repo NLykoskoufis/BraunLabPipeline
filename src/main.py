@@ -54,7 +54,7 @@ if len(sys.argv) > 1:
         sys.exit(0)
 
 parser.add_argument('-raw', '--raw-dir', dest='raw_dir',required=True, type=str, help='Absolute path to the raw directory')
-parser.add_argument('-fastq', '--fast-qdir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
+parser.add_argument('-fastq', '--fastq-dir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 #parser.add_argument('-trimfastq', '--trim-fastq-dir', dest='trimmed_fastq_dir', type=str, help='Absolut path trimmed fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 parser.add_argument('-bam', '--bam-dir', dest='bam_dir', type=str, help='Path bam diretory, is multiple, separate with space.')
 parser.add_argument('-peak', '--peak-dir', dest='peaks_dir', type=str, help='Path peak diretory, is multiple, separate with space.')
@@ -124,7 +124,7 @@ elif configFileDict['technology'] == "ChIPSeq":
         task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
-        task_list = ['1', '1.1', '2', '9', 'report']
+        task_list = ['1.1', '2', '9', 'report']
     if '3' in task_list or '4' in task_list: 
         vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
     if '8' in task_list:
