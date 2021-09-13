@@ -95,7 +95,11 @@ peak_calling,--format BED --nomodel -g mm -B
 #######################
 
 #### EXON QUANTIFICATION OPTIONS ####
-quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
+quantificationSoftware,featureCounts
+#quantificationSoftware,QTLtools
+
+#quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
+quantOptions,-T 4 
 #####################################
 
 

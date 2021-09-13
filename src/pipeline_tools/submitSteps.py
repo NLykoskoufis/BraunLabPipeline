@@ -436,7 +436,6 @@ def submitBamQC(configFileDict, BAM_FILES):
 
         configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["atacQC_dir"]),configFileDict['uid'],out))
         
-        
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
     del BAMQC_JID_LIST
     return BAMQC_WAIT
@@ -487,7 +486,7 @@ def submitMultiQC(configFileDict):
     del MFASTQC_JID_LIST
     return MFASTQC_WAIT
 
-def submitExonQuantification(configFileDict, BAM_FILES):
+def submitQTLtoolsExonQuantification(configFileDict, BAM_FILES):
     QUANT_JID_LIST = []
     OUTPUT_DIR = configFileDict['quantification_dir']
     
@@ -512,5 +511,31 @@ def submitExonQuantification(configFileDict, BAM_FILES):
     QUANT_WAIT = ",".join(QUANT_JID_LIST)
     del QUANT_JID_LIST
     return QUANT_WAIT
-                
+
+
+def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES):
+    QUANT_JID_LIST = []
+    OUTPUT_DIR = configFileDict['quantification_dir']
+    
+    
+    for bam in BAM_FILES: 
+        sampleName = os.path.basename(bam).split(".")[0]
+        outputFile = "{outputDir}/{smp}".format(outputDir = OUTPUT_DIR, smp = sampleName)
+        
+        QUAN_CMD = "{bin} {quantOptions} -a {GTF} -o {outputFile}.raw.gene.count.txt {bamFile}".format(bin = configFileDict['featureCounts'], GTF = configFileDict['annotation'], outputFile = outputFile, bamFile = bam, quantOptions = configFileDict['quantOptions'])
+        
+        if '2' in configFileDict['task_list'] : 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'])
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        QUANT_JID_LIST.append(catchJID(out))
+            
+        configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
+        
+    QUANT_WAIT = ",".join(QUANT_JID_LIST)
+    del QUANT_JID_LIST
+    return QUANT_WAIT
+
+    
         
