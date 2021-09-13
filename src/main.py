@@ -11,7 +11,7 @@ import glob
 from datetime import datetime
 from pipeline_tools.slurmTools import catchJID
 import json
-from pipeline_tools.submitSteps import submitJobCheck, submitJobCheck2, submitMappingSTAR
+from pipeline_tools.submitSteps import submitFeatureCountsGeneQuantification, submitJobCheck, submitJobCheck2, submitMappingSTAR
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -304,14 +304,14 @@ if '4.1' in task_list or '4.2' in task_list: # Create fragment Size distribution
             configFileDict['filtered_bam_dir'] = args.bam_dir 
     if args.output_dir: 
         print("You specified an output directory. The pipeline will therefore not create one.")
-        configFileDict['atacQC_dir'] = f"{args.output_dir}/ATACseqQC"
+        configFileDict['bamQC_dir'] = f"{args.output_dir}/bamQC"
     else: 
-        configFileDict['atacQC_dir'] = f"{args.raw_dir}/ATACseqQC"
+        configFileDict['bamQC_dir'] = f"{args.raw_dir}/bamQC"
     if checkDir(configFileDict['atacQC_dir']): 
         vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
     else: 
-        createDir(configFileDict['atacQC_dir'])
-        createLog(configFileDict['atacQC_dir']) 
+        createDir(configFileDict['bamQC_dir'])
+        createLog(configFileDict['bamQC_dir']) 
 
 if '5' in task_list: ## CREATE BIGWIG
     if '4' not in task_list: 
@@ -676,7 +676,7 @@ if '7' in task_list:
     
     task_dico["7"] = "EXT_BED_WAIT"
     task_log_dico['7'] = 'extend_log_files'
-    
+
 # ===========================================================================================================
 STEP8 = "PEAK CALLING"
 # ===========================================================================================================
@@ -735,10 +735,13 @@ if '9' in task_list:
         configFileDict['QUANT_WAIT'] = QUANT_WAIT
     else:
         BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
-        QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
-        configFileDict['QUANT_WAIT'] = QUANT_WAIT
-    #submitJobCheck(configFileDict, 'quant_log_files',QUANT_WAIT)
-    
+        if configFileDict['quantificationSoftware'] == "QTLtools":
+            QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES)
+        elif configFileDict['quantificationSoftware'] == "featureCounts":
+            QUANT_WAIT = submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES)
+        else: 
+            vrb.error("You need to specify which software to use for gene quantification")
+    configFileDict['QUANT_WAIT'] = QUANT_WAIT    
     task_dico['9'] = 'QUANT_WAIT'
     task_log_dico['9'] = 'quant_log_files'
 
@@ -786,33 +789,33 @@ if 'report' in task_list:
     dict2File(task_log_dico,f"{output_dir}/task_log_dico.json")
     
     configFileDict['report_log_file'] = []
-    if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
+    
         
-        wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in task_list if lst != "report"])
+    wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in task_list if lst != "report"])
 
-        json1 = f"{output_dir}/configFileDict.json"
-        json2 = f"{output_dir}/task_log_dico.json"
+    json1 = f"{output_dir}/configFileDict.json"
+    json2 = f"{output_dir}/task_log_dico.json"
+    
+    if '1.1' in task_list: 
+        cp_multiqc = "cp {fastqc}/multiqc_report.html {reportDir}/".format(fastqc = configFileDict['fastQC_dir'], reportDir = configFileDict['report_dir'])
+        outputDir = configFileDict['output_dir'] if args.output_dir else configFileDict['raw_dir']
+        zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir = configFileDict['report_dir'], raw_dir = outputDir)
         
-        if '1.1' in task_list: 
-            cp_multiqc = "cp {fastqc}/multiqc_report.html {reportDir}/".format(fastqc = configFileDict['fastQC_dir'], reportDir = configFileDict['report_dir'])
-            outputDir = configFileDict['output_dir'] if args.output_dir else configFileDict['raw_dir']
-            zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir = configFileDict['report_dir'], raw_dir = outputDir)
-            
-        
-        CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = output_dir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
-        
-        # Create .sh file to run the command. 
-        
-        SLURM = "{wsbatch} --dependency=afterok:{JID} -o {output_dir}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD, output_dir = output_dir)
-        #print(SLURM)
-        
-        out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
-        REPORT_WAIT = "".join(catchJID(out))
-        configFileDict['REPORT_WAIT'] = REPORT_WAIT
-        configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
-        task_dico['report'] = "REPORT_WAIT"
-        task_log_dico['report'] = 'report_log_file'
-        #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out)) 
+    
+    CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = output_dir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
+    
+    # Create .sh file to run the command. 
+    
+    SLURM = "{wsbatch} --dependency=afterok:{JID} -o {output_dir}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD, output_dir = output_dir)
+    #print(SLURM)
+    
+    out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
+    REPORT_WAIT = "".join(catchJID(out))
+    configFileDict['REPORT_WAIT'] = REPORT_WAIT
+    configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
+    task_dico['report'] = "REPORT_WAIT"
+    task_log_dico['report'] = 'report_log_file'
+    #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out)) 
 
 
 ########################

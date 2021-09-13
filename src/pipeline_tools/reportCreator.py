@@ -52,8 +52,10 @@ def copyPlot(configFileDict, task_dico):
         output_log = configFileDict['report_dir'] + "/log"
         sampleID = configFileDict['sample_prefix']
         samples_plots = [input_dir + "/" + i +"_fragSizeDistPlot.pdf" for i in sampleID]
+    elif configFileDict['technology'] == "RNAseq":
+        print("TBD")
         
-        cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=" ".join(samples_plots))
+    cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=" ".join(samples_plots))
     return cp_plots 
 
 
