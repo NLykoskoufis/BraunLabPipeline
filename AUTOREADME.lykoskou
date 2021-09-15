@@ -6,3 +6,39 @@ lh
 git pull origin
 #[2021-09-03 01:37:49 PM]
 git status
+#[2021-09-03 01:37:53 PM]
+git add *
+#[2021-09-03 01:37:57 PM]
+git commit -m "test"
+#[2021-09-03 01:38:07 PM]
+git pull origin
+#[2021-09-03 01:38:23 PM]
+less src/main.py
+#[2021-09-03 01:50:25 PM]
+cd Tools/braunATACpipeline
+#[2021-09-03 01:50:25 PM]
+lh
+#[2021-09-13 09:27:48 AM]
+/srv/beegfs/scratch/shares/brauns_lab/Tools/braunATACpipeline/
+#[2021-09-13 09:27:48 AM]
+lh
+#[2021-09-13 09:27:59 AM]
+git pull origin
+#[2021-09-15 10:45:12 AM]
+../../../../../Tools/braunATACpipeline/
+#[2021-09-15 10:45:23 AM]
+git pull origin
+#[2021-09-15 10:47:00 AM]
+cd Tools/braunATACpipeline
+#[2021-09-15 10:47:00 AM]
+lh
+#[2021-09-15 10:47:07 AM]
+git pull origin
+#[2021-09-15 10:51:44 AM]
+git pull origin
+#[2021-09-15 10:51:45 AM]
+git pull origin
+#[2021-09-15 10:52:17 AM]
+git pull origin
+#[2021-09-15 10:53:50 AM]
+git pull origin

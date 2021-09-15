@@ -5,9 +5,9 @@ from collections import defaultdict
 import re
 import gzip 
 import os.path 
+import argparse 
 
 # ===========================================================================================================
-from typing import DefaultDict
 
 
 DESC_COMMENT = "Script to transform a featureCounts counts to proper bed file"
@@ -90,4 +90,62 @@ def TXT2BED(ftxt, fgtf, fout):
             g.write(chrom + "\t" + str(tss-1) + "\t" + str(tss) + "\t" + gene + "\t" + info + "\t" + dico[gene]['strand'] + "\t" + "\t".join(line[6:])+ "\n"
 )
             
-TXT2BED(*sys.argv[1:])
+#TXT2BED(*sys.argv[1:])
+
+def combineCounts(ftxts, fgtf, outFile):
+    combinedDico = defaultdict(list)
+    lengthDico = {}
+    print(f" * Reading: {fgtf}")
+    annotationDico = readAnnotationGTF(fgtf)
+    sampleS = 0
+
+    for file in ftxts: 
+        print(f" * Reading {file}")
+        f = Utils.myopen(file)
+        for line in (line.strip().split("\t") for line in f):
+            if line[0].startswith("#"):
+                pass
+            elif line[0] == "Geneid":
+                combinedDico['samples'].append(os.path.basename(line[-1]).split(".")[0])
+                sampleS += 1
+            else: 
+                combinedDico[line[0]].append(line[6])
+                lengthDico[line[0]] = line[5]
+    
+    print(f" * {sampleS} samples will be merged together")
+    print(f" * Writing merged data to bed file format")
+    
+    with open(outFile, "w") as g:
+        g.write("#chr\tstart\tend\tid\tinfo\tstrand\t"+"\t".join(combinedDico['samples']) + "\n")
+        for key, expValues in combinedDico.items():
+            if key != "samples":
+                chrom = annotationDico[key]['chr']
+                tss = annotationDico[key]['tss']
+                info = "L={length};T={type};R={chrom}:{start}-{end};N={name}".format(length = lengthDico[key], type = annotationDico[key]['type'], chrom = chrom, start = str(annotationDico
+[key]['start']), end = str(annotationDico[key]['end']), name = annotationDico[key]['name'])
+                g.write(chrom + "\t" + str(tss-1) + "\t" + str(tss) + "\t" + key + "\t" + info + "\t" + annotationDico[key]['strand'] + "\t" + "\t".join(expValues)+ "\n")
+
+
+
+parser = argparse.ArgumentParser(description='Pipeline to process data from illumina sequencers.')
+parser.add_argument('-v', dest='version', action='store_true', help='Display pipeline version')
+#If user is asking for version
+if len(sys.argv) > 1:
+    if sys.argv[1] == '-v':
+        print('Pipeline version 1.00\n### BETA VERSION. USE IT WITH CAUTION!!!')
+        sys.exit(0)
+
+parser.add_argument('-f', '--file-list', dest='ftxts',required=True, type=str, nargs="+", help='List of files to combine together')
+parser.add_argument('-gtf', '--gtf-file', dest='fgtf', required=True, type=str, help="Annotation file in gtf format")
+parser.add_argument("-out", '--outputFile', dest='outputFile', required=True, type=str, help = "output file name")
+
+
+####################
+#    CHECK ARGS    #
+####################
+
+#Get command line args
+args = parser.parse_args()
+
+if __name__ == "__main__":
+    combineCounts(args.ftxts, args.fgtf, args.outputFile)
