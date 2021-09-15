@@ -4,6 +4,7 @@ import sys
 from collections import defaultdict 
 import re
 import gzip 
+
 # ===========================================================================================================
 from typing import DefaultDict
 
@@ -34,6 +35,7 @@ class Utils:
             return gzip.open(filename,"rt")
         except:
             f.close()
+            return open(filename,"rt")
             
 def readAnnotationGTF(fgtf):
     dico = defaultdict(dict)
