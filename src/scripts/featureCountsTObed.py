@@ -45,7 +45,7 @@ def readAnnotationGTF(fgtf):
             continue
         else:
             if line[2] == "gene":
-                print(line)
+                
                 chrom = line[0]
                 start = line[3]
                 end = line[4]
