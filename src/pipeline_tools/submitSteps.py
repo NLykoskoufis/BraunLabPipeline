@@ -530,7 +530,7 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'])
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         QUANT_JID_LIST.append(catchJID(out))
-            
+
         configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
         
     QUANT_WAIT = ",".join(QUANT_JID_LIST)

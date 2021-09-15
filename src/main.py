@@ -124,7 +124,7 @@ elif configFileDict['technology'] == "ChIPSeq":
         task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
-        task_list = ['1.1', '2', '9', 'report']
+        task_list = ['1.1', '2', '9']
     if '3' in task_list or '4' in task_list: 
         vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
     if '8' in task_list:
