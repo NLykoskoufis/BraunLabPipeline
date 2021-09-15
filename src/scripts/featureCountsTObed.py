@@ -86,3 +86,5 @@ def TXT2BED(ftxt, fgtf, fout):
 [gene]['start']), end = str(dico[gene]['end']), name = dico[gene]['name'])
             g.write(chrom + "\t" + str(tss-1) + "\t" + str(tss) + "\t" + gene + "\t" + info + "\t" + dico[gene]['strand'] + "\t" + "\t".join(line[6:])+ "\n"
 )
+            
+TXT2BED(*sys.argv[1:])
