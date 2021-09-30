@@ -22,9 +22,11 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
     """    
     TRIM_JID_LIST = []
     for file in FASTQ_PREFIX:
-        TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}_R1_001.fastq.gz {fastq_dir}/{file}_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
-        
-        
+        if configFileDict['pairend'] == 1:
+            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}_R1_001.fastq.gz {fastq_dir}/{file}_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
+        else: 
+            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz  {fastq_dir}/{file}_R1_001.fastq.gz ".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
+            
         SLURM_CMD = "{wsbatch} {slurm} -o {trimmed_log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_trim"], trimmed_log_dir = "{}/log".format(configFileDict["trimmed_fastq_dir"]), uid = configFileDict["uid"], cmd = TRIM_CMD)
         #print(SLURM_CMD)
         
@@ -34,6 +36,7 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
         configFileDict['trim_log_files'].append(getSlurmLog("{}/log".format(configFileDict["trimmed_fastq_dir"]),configFileDict['uid'],out))
         #TRIM_JID_LIST.append('0') #### FOR DEBUGGING PURPOSES
         
+            
     TRIM_WAIT = ",".join(TRIM_JID_LIST)
     #del TRIM_JID_LIST
     return TRIM_WAIT
@@ -328,6 +331,42 @@ def submitPeakCalling(configFileDict,BED_FILES):
     return PEAK_CALLING_WAIT
 
 
+def submitChIPseqPeakCalling(configFileDict,BED_FILES):
+    """[Submits jobs peak calling]
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        BED_FILES [str]: list of tuples containing bed file and inputs. 
+
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """
+    PEAK_CALLING_JID_LIST = []
+    OUTPUT_DIR = configFileDict['peaks_dir']
+    
+    for file in BED_FILES:
+        sample = file[0]
+        inputs = file[1]
+        
+        input_file = os.path.basename(sample).split(".")[0]
+        OUTPUT_FILE = "{}/{}.MACS".format(OUTPUT_DIR, input_file)
+        
+        PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {sample} -c {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=inputs, sample = sample, output=OUTPUT_FILE, prefix=input_file)
+        
+        if '6' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
+        else: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        PEAK_CALLING_JID_LIST.append(catchJID(out))
+        
+        configFileDict['peak_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peaks_dir"]),configFileDict['uid'],out))
+        
+    PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
+    del PEAK_CALLING_JID_LIST
+    return PEAK_CALLING_WAIT
+
+
 
 def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES):
     """[Submits jobs peak2Counts]
@@ -500,7 +539,7 @@ def submitQTLtoolsExonQuantification(configFileDict, BAM_FILES):
         QUAN_CMD = "{qtltools} quan --gtf {annotation} --bam {bam} --out-prefix {outputPrefix} --sample {smp} {quantOptions}".format(qtltools = configFileDict['QTLtools'], annotation = configFileDict['annotation'], bam = bam, outputPrefix = outputFile, smp = sampleName, quantOptions = configFileDict['quantOptions'])
         
         if '2' in configFileDict['task_list'] : 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
+           SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'])
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
@@ -536,6 +575,3 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES):
     QUANT_WAIT = ",".join(QUANT_JID_LIST)
     del QUANT_JID_LIST
     return QUANT_WAIT
-
-    
-        

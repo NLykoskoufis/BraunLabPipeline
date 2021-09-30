@@ -119,9 +119,9 @@ task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
         task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1','report']
-elif configFileDict['technology'] == "ChIPSeq":
+elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4', '5','6','7','8','report'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1','report'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
         task_list = ['1.1', '2', '9']
@@ -684,16 +684,36 @@ STEP8 = "PEAK CALLING"
 if '8' in task_list: 
     vrb.bullet("Running peak calling\n")
     configFileDict['peak_log_files'] = []
-    if '7' not in task_list: 
-        BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
-        PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
-        configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
-    else: 
-        BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
-        PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
-        configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+    if configFileDict['technology'] == "ATACseq":
+        if '7' not in task_list: 
+            BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+            PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
+            configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+        else: 
+            BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
+            PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
+            configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
     #submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
-    
+    elif configFileDict['technology'] == "ChIPseq":
+        if '7' not in task_list: 
+            FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+            INPUTS=[i for i in FILES if i.split(".") == "input"]
+            SAMPLE_BED = [i for i in FILES if i.split(".")[1] != "input"]
+            BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if i.split(".")[0] == j.split(".")[0]]
+            if len(BED_FILES) != len(SAMPLE_BED):
+                vrb.error("Samples and Inputs files do not match!")
+            PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES)
+            configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+        else: 
+            BED_FILES = [("{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'],i), "{}/{}.input.extendedReads.bed".format(configFileDict['extended_bed_dir'],i)) for i in configFileDict['sample_prefix']]
+                          
+            PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES)
+            configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+    else:
+        vrb.error("You are trying to run peak calling with data that is neither ATAC-seq nor ChIP-seq. Did you forget to change the technology?")
+        
+        
+        
     task_dico["8"] = "PEAK_CALLING_WAIT"
     task_log_dico['8'] = 'peak_log_files'
     
