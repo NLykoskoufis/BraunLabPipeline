@@ -43,8 +43,6 @@ Pipeline for Processing ATACseq, ChIP-seq and RNAseq data
 #===============================================================================
 """
 
-
-
 parser = argparse.ArgumentParser(description='Pipeline to process data from illumina sequencers.')
 parser.add_argument('-v', dest='version', action='store_true', help='Display pipeline version')
 #If user is asking for version
@@ -118,10 +116,10 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1','report']
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1']
 elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4','4.2','5','6','7','8','8.1','report'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.2','5','6','7','8','8.1'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
         task_list = ['1.1', '2', '9']
@@ -134,6 +132,7 @@ elif configFileDict['technology'] == "RNAseq":
 else: 
     vrb.error("ERROR. The pipeline can only process ATACseq, ChIPseq or RNAseq data. PLease specify one of them in the configuration file")
 
+task_list.append("report") # No matter what step you are running, always create a report!
 
 if not args.raw_dir: 
     vrb.error("ERROR. You need to specify a raw directory for the pipeline to work")
@@ -585,7 +584,6 @@ if '4.1' in task_list:
         BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
         ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES)
         configFileDict['ATACQC_WAIT'] = ATACQC_WAIT
-    #submitJobCheck(configFileDict,'atacQC_log_files',ATACQC_WAIT)
     task_dico['4.1'] = "ATACQC_WAIT"
 
     task_log_dico['4.1'] = 'atacQC_log_files'
@@ -603,10 +601,11 @@ if '4.2' in task_list:
         BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
         configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
     else: 
-        BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+        BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+        
         BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
         configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
-    #submitJobCheck(configFileDict,'bamQC_log_files',BAMQC_WAIT)
+    
     task_dico['4.2'] = "BAMQC_WAIT"
 
     task_log_dico['4.2'] = 'bamQC_log_files'
@@ -718,7 +717,7 @@ if '8' in task_list:
     task_dico["8"] = "PEAK_CALLING_WAIT"
     task_log_dico['8'] = 'peak_log_files'
     
-  
+
 # ===========================================================================================================
 STEP8_1 = "PEAK2COUNTS"
 # ===========================================================================================================
@@ -758,6 +757,8 @@ if '9' in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
         QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
         configFileDict['QUANT_WAIT'] = QUANT_WAIT
+        
+   
     else:
         BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
         if configFileDict['quantificationSoftware'] == "QTLtools":
@@ -788,9 +789,6 @@ logFiles = [item for sublist in LOG_FILES for item in sublist]
         
 submitJobCheck2(configFileDict,logFiles, wait_condition)
         
-
-
-
 
 # ===========================================================================================================
 REPORT = "CREATING REPORT"
@@ -840,7 +838,6 @@ if 'report' in task_list:
     configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
     task_dico['report'] = "REPORT_WAIT"
     task_log_dico['report'] = 'report_log_file'
-    #configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out)) 
 
 
 ########################

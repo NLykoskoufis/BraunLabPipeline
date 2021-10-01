@@ -23,7 +23,7 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
     TRIM_JID_LIST = []
     for file in FASTQ_PREFIX:
         print(file)
-        if configFileDict['pairend'] == 1:
+        if configFileDict['pairend'] == "1":
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}*_R1_001.fastq.gz {fastq_dir}/{file}*_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
         else: 
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz  {fastq_dir}/{file}*_R1_001.fastq.gz ".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
@@ -58,7 +58,7 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
     for file in FASTQ_PREFIX:                                                        
 
         
-        if configFileDict['pairend'] ==  1: 
+        if configFileDict['pairend'] ==  "1": 
             MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'])
         else:
             MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -U {dir}/{file}*_R1_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome']) 
@@ -106,7 +106,7 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX):
     for sample in FASTQ_PREFIX:                                                        
 
 
-        if(pairend == '0') :
+        if pairend == "0" :
             STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
         else:
             STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
