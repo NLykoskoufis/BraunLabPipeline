@@ -163,3 +163,7 @@ macs2,/home/users/l/lykoskou/Software/MACS2-2.2.7.1/bin/macs2
 
 #bedClip
 bedClip,/home/users/l/lykoskou/bin/bedClip
+
+#plotBam 
+plotBam,/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/misc/plot-bamstats
+

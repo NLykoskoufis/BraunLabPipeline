@@ -22,13 +22,14 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
     """    
     TRIM_JID_LIST = []
     for file in FASTQ_PREFIX:
+        print(file)
         if configFileDict['pairend'] == 1:
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}*_R1_001.fastq.gz {fastq_dir}/{file}*_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
         else: 
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz  {fastq_dir}/{file}*_R1_001.fastq.gz ".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
             
         SLURM_CMD = "{wsbatch} {slurm} -o {trimmed_log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_trim"], trimmed_log_dir = "{}/log".format(configFileDict["trimmed_fastq_dir"]), uid = configFileDict["uid"], cmd = TRIM_CMD)
-        #print(SLURM_CMD)
+        print(SLURM_CMD)
         
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         TRIM_JID_LIST.append(catchJID(out))
@@ -56,8 +57,11 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
     configFileDict['mapping_log_files'] = []
     for file in FASTQ_PREFIX:                                                        
 
-        MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {sorted_bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'], sorted_bam_dir=configFileDict['sorted_bam_dir'])
         
+        if configFileDict['pairend'] ==  1: 
+            MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'])
+        else:
+            MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -U {dir}/{file}*_R1_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome']) 
         
         if '1' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = MAP_CMD, JID=configFileDict["TRIM_WAIT"])
@@ -352,7 +356,7 @@ def submitChIPseqPeakCalling(configFileDict,BED_FILES):
         OUTPUT_FILE = "{}/{}.MACS".format(OUTPUT_DIR, input_file)
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {sample} -c {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=inputs, sample = sample, output=OUTPUT_FILE, prefix=input_file)
-        
+        print(PEAKCALL_CMD)
         if '6' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
         else: 
@@ -417,7 +421,6 @@ def submitJobCheck(configFileDict, log_key, wait_key):
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 
 def submitJobCheck2(configFileDict, logFiles, wait_key):
-    #log_files = configFileDict[log_key]
     cmd = []
     for file in logFiles:
         cmd.append("python3 {jobCheck} -w -log {file}".format(jobCheck=configFileDict['jobCheck'], file=file))
@@ -426,11 +429,11 @@ def submitJobCheck2(configFileDict, logFiles, wait_key):
     
     SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
-    #print(SLURM_CMD)
+    
 
 def submitATACseqQC(configFileDict, BAM_FILES):
     ATACQC_JID_LIST = []
-    OUTPUT_DIR = configFileDict['atacQC_dir']
+    OUTPUT_DIR = configFileDict['bamQC_dir']
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
         
@@ -445,7 +448,7 @@ def submitATACseqQC(configFileDict, BAM_FILES):
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         ATACQC_JID_LIST.append(catchJID(out))
 
-        configFileDict['atacQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["atacQC_dir"]),configFileDict['uid'],out))
+        configFileDict['atacQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
         
         
     ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
@@ -457,23 +460,29 @@ def submitATACseqQC(configFileDict, BAM_FILES):
 
 def submitBamQC(configFileDict, BAM_FILES):
     BAMQC_JID_LIST = []
-    OUTPUT_DIR = configFileDict['atacQC_dir']
+    OUTPUT_DIR = configFileDict['bamQC_dir']
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
-        output_file = f"{OUTPUT_DIR}/{input_file}_bamQC_stats.csv"
         
-        BAMQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['bamQC'],input = bam,output_dir = output_file) 
+        if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
+            output_file = f"{OUTPUT_DIR}/{input_file}_bamQC_stats.csv"
+            BAMQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['ATACbamQC'],input = bam,output_dir = output_file) 
+        elif configFileDict['technology'] == "RNAseq":
+            outputFile = f"{OUTPUT_DIR}/{input_file}_bamStats"
+            BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}"
+        else: 
+            vrb.error("You need to specify a technology ATACseq, ChIPseq or RNAseq.")
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
-            #print(SLURM_CMD)
+
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD)
-            #print(SLURM_CMD)
+
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         BAMQC_JID_LIST.append(catchJID(out))
 
-        configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["atacQC_dir"]),configFileDict['uid'],out))
+        configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
         
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
     del BAMQC_JID_LIST
