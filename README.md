@@ -1,9 +1,5 @@
----
-title: Pipeline for processing ATAC-seq / ChIPseq and RNAseq experiments
-author: Nikolaos Lykoskoufis
-date: 12th of July 2021
-geometry: margin=2cm
----
+# BraunPipeline 
+## Pipeline for processing ATACseq, ChIPseq and RNAseq data from fastq to peak counts / gene expression.
 
 This is a document explaining how the pipeline works.
 The pipeline is split in multiple steps. Depending on the type of data you are using, different steps will be ran. 
