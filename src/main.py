@@ -692,9 +692,9 @@ if '8' in task_list:
     elif configFileDict['technology'] == "ChIPseq":
         if '7' not in task_list: 
             FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
-            INPUTS= sorted([i for i in FILES if i.split("_")[0] == "Input"])
-            SAMPLE_BED = sorted([i for i in FILES if i.split("_")[0] != "Input"])
-            BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if i.split(".")[0] == j.split(".")[0].split("_")[1]]
+            INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
+            SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
+            BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
             if len(BED_FILES) != len(SAMPLE_BED):
                 vrb.error("Samples and Inputs files do not match!")
                 
@@ -787,9 +787,8 @@ for task in task_list:
 wait_condition = ",".join(wait_condition)
 logFiles = [item for sublist in LOG_FILES for item in sublist]
         
-submitJobCheck2(configFileDict,logFiles, wait_condition)
-        
-
+JOBCHECK_WAIT = submitJobCheck2(configFileDict,logFiles, wait_condition)
+configFileDict['JOBCHECK_WAIT'] = JOBCHECK_WAIT    
 # ===========================================================================================================
 REPORT = "CREATING REPORT"
 # ===========================================================================================================
@@ -806,31 +805,39 @@ REPORT = "CREATING REPORT"
 if 'report' in task_list: 
     
     #convert configFileDict and task_dico to file.
-    output_dir = configFileDict['report_dir']
+    outputDir = configFileDict['output_dir'] if args.output_dir else configFileDict['raw_dir']    
+    reportDir = configFileDict['report_dir']
     
-    dict2File(configFileDict,f"{output_dir}/configFileDict.json")
-    dict2File(task_log_dico,f"{output_dir}/task_log_dico.json")
+    dict2File(configFileDict,f"{reportDir}/configFileDict.json")
+    dict2File(task_log_dico,f"{reportDir}/task_log_dico.json")
     
     configFileDict['report_log_file'] = []
     
-        
+    
     wait_condition = ",".join([configFileDict[task_dico[lst]] for lst in task_list if lst != "report"])
-
-    json1 = f"{output_dir}/configFileDict.json"
-    json2 = f"{output_dir}/task_log_dico.json"
+    jobcheck_wait = configFileDict['JOBCHECK_WAIT']
+    wait_condition = wait_condition + "," + jobcheck_wait
+    
+    
+    json1 = f"{reportDir}/configFileDict.json"
+    json2 = f"{reportDir}/task_log_dico.json"
     
     if '1.1' in task_list: 
-        cp_multiqc = "cp {fastqc}/multiqc_report.html {reportDir}/".format(fastqc = configFileDict['fastQC_dir'], reportDir = configFileDict['report_dir'])
-        outputDir = configFileDict['output_dir'] if args.output_dir else configFileDict['raw_dir']
-        zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir = configFileDict['report_dir'], raw_dir = outputDir)
+        cp_multiqc = "cp {fastqc}/multiqc_report.html {reportDir}/".format(fastqc = configFileDict['fastQC_dir'], reportDir = reportDir)
         
-    
-    CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = output_dir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
+        zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir = reportDir, raw_dir = outputDir)
+        
+        CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = reportDir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
+    else:
+            
+        zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir =reportDir, raw_dir = outputDir)
+        
+        CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = reportDir, zipDir_cmd = zipDir_cmd)
     
     # Create .sh file to run the command. 
     
-    SLURM = "{wsbatch} --dependency=afterok:{JID} -o {output_dir}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD, output_dir = output_dir)
-    #print(SLURM)
+    SLURM = "{wsbatch} --dependency=afterok:{JID} -o {output_dir}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD, output_dir = f"{reportDir}/log")
+   
     
     out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
     REPORT_WAIT = "".join(catchJID(out))
@@ -861,14 +868,9 @@ else:
 # Mail that pipeline ended # 
 wait_condition = []
 for t in task_list:
-    if t == "report":
-        pass
-    else:
         wait_condition.append(configFileDict[task_dico[t]])
 
-if 'all' in args.task: 
-    wait_condition.append(configFileDict[task_dico["report"]])
-    
+
 wait_condition = ",".join(wait_condition)
 if not args.output_dir:
     msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['raw_dir'], steps=steps, uid = configFileDict['uid'])
@@ -877,7 +879,8 @@ else:
     msg = "The pipeline ended. All results can be found under {raw_dir}.\nThe steps that were ran were {steps}.".format(raw_dir = configFileDict['output_dir'], steps=steps, uid = configFileDict['uid'])
     
 
-DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}' -join /srv/beegfs/scratch/users/l/lykoskou/Braun_lab/ATAC/test2/pipeline_report.zip".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses))
+outputDir = configFileDict['output_dir'] if args.output_dir else configFileDict['raw_dir']    
+DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}' -join {outputDir}/pipeline_report.zip".format(mail=configFileDict['mail_script'], subject = "Pipeline_finished", msg= msg, addresses = " ".join(addresses),outputDir= outputDir)
 
 
 SLURM_CMD = "{wsbatch} -o {raw_log}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], raw_log = configFileDict['raw_log'], uid = configFileDict['uid'],JID = wait_condition, cmd = DONE_CMD)

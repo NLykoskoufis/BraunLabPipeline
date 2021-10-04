@@ -62,15 +62,16 @@ def copyPlot(configFileDict, task_dico):
 def getAllExitCodesPerTask(configFileDict,task_dico):
     dico = defaultdict(dict)
     for task in configFileDict['task_list']:
+        vrb.bullet(task)
         if task == "report":
             continue
         else:
             vrb.bullet("Checking Exit Codes of task: "+task)
-            print(task_dico[task])
+            #print(task_dico[task])
             logFiles = configFileDict[task_dico[task]]
-            print(logFiles)
+            #print(logFiles)
             for file in logFiles:
-                
+                print(file)
                 dico[task][file] = check_exitCodes(file)
     return dico 
 
@@ -81,7 +82,6 @@ def readDictFromFile(dico):
     return dict
     
 
-
 def main(configFileDict_file, task_dico_file, reportName):
     configFileDict = readDictFromFile(configFileDict_file)
     task_dico = readDictFromFile(task_dico_file)
@@ -91,16 +91,18 @@ def main(configFileDict_file, task_dico_file, reportName):
     
     
     #1 combine bamQC data
-    COMBINE_CMD = subprocess.Popen(combineBamQC(configFileDict,task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    if "4.2" in configFileDict['task_list']: 
+        COMBINE_CMD = subprocess.Popen(combineBamQC(configFileDict,task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
     
     #2 copy plots to report directory 
-    if configFileDict['technology'] == "ATACseq":
+
+    if configFileDict['technology'] == "ATACseq" and "4.1" in configFileDict['task_list']:
         COPY_CMD = subprocess.Popen(copyPlot(configFileDict, task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
     
     #3 Get all exit Codes per task 
     
     dico = getAllExitCodesPerTask(configFileDict,task_dico)
-    
+    print(dico)
     # Start creation of report
     date = datetime.now().strftime("%d/%m/%Y")
 
@@ -112,7 +114,9 @@ def main(configFileDict_file, task_dico_file, reportName):
     else: 
         log.bullet("Output directory: "+ configFileDict['output_dir'])
     
+    print(configFileDict['task_list'])
     for task in configFileDict['task_list']:
+        
         if task == "report":
             continue
         else:
@@ -121,10 +125,11 @@ def main(configFileDict_file, task_dico_file, reportName):
             code_set = set()
             FAILED = []
             for l,exitCode in logFiles.items():
+                print(l,"\t", exitCode)
                 val = "Successfully completed" if exitCode else "Failed"
                 log.bullet(l + ": " + val)
     
-    if configFileDict['technology'] == "ATACseq":
+    if configFileDict['technology'] == "ATACseq" and "4.1" in configFileDict['task_list']:
         log.title("ATAC seq QC plots")
         plots = glob.glob(configFileDict['report_dir']+"/*.pdf")
         if len(plots) == 0: 

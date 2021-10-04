@@ -4,6 +4,7 @@ import subprocess
 import sys 
 import glob
 import os
+from pipeline_tools.slurmTools import catchJID
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -429,7 +430,8 @@ def submitJobCheck2(configFileDict, logFiles, wait_key):
     
     SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
-    
+    JOBCHECK_WAIT = catchJID(out)
+    return JOBCHECK_WAIT
 
 def submitATACseqQC(configFileDict, BAM_FILES):
     ATACQC_JID_LIST = []

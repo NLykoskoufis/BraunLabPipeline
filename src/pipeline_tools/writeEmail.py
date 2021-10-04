@@ -33,28 +33,26 @@ def writeEmail(addresses, subject, body,attachments=None):
     msg.attach(MIMEText(body, "plain"))
     
     
-    #if attachments != None: 
-    filename = "/srv/beegfs/scratch/users/l/lykoskou/Braun_lab/ATAC/test2/pipeline_report.zip"  # In same directory as script
-
+    if attachments != None: 
+        filename = attachments
     # Open filename file in binary mode
-    with open(filename, "rb") as attachment:
-        # Add file as application/octet-stream
-        # Email client can usually download this automatically as attachment
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(attachment.read())
-
-    # Encode file in ASCII characters to send by email    
-    encoders.encode_base64(part)
-
-    # Add header as key/value pair to attachment part
-    part.add_header(
-        "Content-Disposition",
-        "attachment; filename= pipeline_report.zip",
-    )
-
-    # Add attachment to message and convert message to string
-    msg.attach(part)
-    
+        with open(filename, "rb") as attachment:
+            # Add file as application/octet-stream
+            # Email client can usually download this automatically as attachment
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment.read())
+        # Encode file in ASCII characters to send by email    
+        encoders.encode_base64(part)
+        # Add header as key/value pair to attachment part
+        part.add_header(
+            "Content-Disposition",
+            "attachment; filename= pipeline_report.zip",
+        )
+        # Add attachment to message and convert message to string
+        msg.attach(part)
+    else: 
+        print("TCB")
+        
     try:
         smtpObj = smtplib.SMTP('localhost')
         smtpObj.sendmail(sender, addresses, msg.as_string())

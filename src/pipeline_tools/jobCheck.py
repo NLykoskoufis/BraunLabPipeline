@@ -49,6 +49,7 @@ def check_exitCodes(logFile):
         f.seek(-2, os.SEEK_CUR)
     last_line = f.readline().decode()
     line = last_line.rstrip().split("|")
+    print(line)
     if line[0] == "__JOB_SUMMARY_INFO":
         if line[-1] == "Successfuly completed":
             return True 
