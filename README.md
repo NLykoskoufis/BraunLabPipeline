@@ -15,30 +15,39 @@ You can run the whole pipeline or specify which step(s) you want to run.
 ```bash 
 python3 main.py --help
 #The following command outputs how to use the script. 
-#usage: main.py [-h] [-v] [-fastq FASTQ_DIR] [-trimfastq TRIMMED_FASTQ_DIR]
-#               [-bam BAM_DIR] [-sortedBam SORTED_BAM_DIR] [-eqd EQ_DIR]
-#               [-bed BED_DIR] [-bw BIGWIG_DIR] [-od OUTPUT_DIR] -cf
-#               CONFIG_FILE_PATH [-tf] [-tb] -t TASK [TASK ...]
+usage: main.py [-h] [-v] -raw RAW_DIR [-fastq FASTQ_DIR] [-bam BAM_DIR]
+               [-peak PEAKS_DIR] [-eqd EQ_DIR] [-bed BED_DIR] [-bw BIGWIG_DIR]
+               [-od OUTPUT_DIR] -cf CONFIG_FILE_PATH -t TASK [TASK ...]
 
-#Pipeline to process data from illumina sequencers.
+BraunPipeline
+ *  Authors     : Nikolaos Lykoskoufis / Simon Braun
+ *  Contact     : nikolaos.lykoskoufis@unige.ch / simon.braun@unige.ch
+ *  Webpage     : https://github.com/NLykoskoufis/braunATACpipeline
+ *  Version     : 1.0
+ *  Description : Pipeline to process High throughput sequencing data.
 
-#optional arguments:
-#  -h, --help            show this help message and exit
-#  -v                    Display pipeline version
-#  -fastq FASTQ_DIR, -fastqdir FASTQ_DIR
-#                        Absolut path fastq to diretor(y)ies. If multiple
-#                        directories, separate eache path with space
-#  -bam BAM_DIR, -bamdir BAM_DIR
-#  -eqd EQ_DIR, -quantification_dir EQ_DIR
-#                        Absolut path peak calling diretory
-#  -bed BED_DIR, -bed BED_DIR
-#                        Absolut path of where to save/read bed files
-#  -bw BIGWIG_DIR, -bigwig BIGWIG_DIR
-#                        Absolut path peak calling diretory
-#  -od OUTPUT_DIR, -outputdir OUTPUT_DIR
-#                        Path to output directory
-#  -cf CONFIG_FILE_PATH  Name of your configuration file: project_run_config_V1
-#  -t TASK [TASK ...]
+optional arguments:
+  -h, --help            show this help message and exit
+  -v                    Display pipeline version
+  -raw RAW_DIR, --raw-dir RAW_DIR
+                        Absolute path to the raw directory
+  -fastq FASTQ_DIR, --fastq-dir FASTQ_DIR
+                        Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space
+  -bam BAM_DIR, --bam-dir BAM_DIR
+                        Path bam diretory, is multiple, separate with space.
+  -peak PEAKS_DIR, --peak-dir PEAKS_DIR
+                        Path peak diretory, is multiple, separate with space.
+  -eqd EQ_DIR, --quant-dir EQ_DIR, -quantification_dir EQ_DIR
+                        Absolut path quantifications diretory
+  -bed BED_DIR, --bed-dir BED_DIR
+                        Absolut path of where to save/read bed files
+  -bw BIGWIG_DIR, --bigwig-dir BIGWIG_DIR
+                        Absolut path peak calling diretory
+  -od OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Path to output directory. Use it only if you do not run the pipeline from step
+  -cf CONFIG_FILE_PATH, --configuration-file CONFIG_FILE_PATH
+                        Name of your configuration file: project_run_config_V1
+  -t TASK [TASK ...], --task TASK [TASK ...]
 ```
 The different arguments of the pipeline are: 
 
