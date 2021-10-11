@@ -98,38 +98,38 @@ The lines that the pipeline are read need to be specially formated. They should 
 Be careful to write the keyword correctly otherwhise the pipeline will not work!
 
 
-##Steps of the pipeline 
+#Steps of the pipeline 
 
-#### Trimming reads 
+### Trimming reads 
 
-This step trims the reads using cutadapt. 
+This steps allows to trim reads either to remove sequencing adapters or shorten the read length. We use cutadapt for the read trimming. 
 
-#### Mapping reads 
+### Mapping reads 
 
 This step maps reads. Depending whether you have ATAC-seq/ChIP-seq or RNAseq data, the mapper will be different. 
 
-#### Sort bam files by coordinates. 
+### Sort bam files by coordinates. 
 This step has to be done because PICARD requires sorted by coordinate bam files. 
 
-#### Mark PCR duplicates
+### Mark PCR duplicates
 This step marks duplicated reads using PICARD.
 
-#### Filtering, sorting and indexing bam file
+### Filtering, sorting and indexing bam file
 This step removes duplicated reads, low quality reads, chrM the bam files. Then it sorts and index. 
 
-#### CREATE .bw for visualization.
+### CREATE .bw for visualization.
 This step reads the bam files and created .bw files for visualization using IGV for exmample.
 
-#### bam2bed 
+### bam2bed 
 This step converts bam files to UCSC bed files. 
 
-#### Bed file with extended reads 
+### Bed file with extended reads 
 This step extends the reas on the bed files depending on the given extension provided
 
-#### PEAK Calling
+### PEAK Calling
 This step performs peak calling using MACS2. This is a step unique to ATAC-seq or ChIP-seq data.
 
-#### Exon quantification
+### Exon quantification
 TBD
 
 ## File naming convention
@@ -137,9 +137,20 @@ TBD
 **This is very important!!!**
 ##### Fastq files
 Fastq files should be written in this specific way: 
+
 SampleID*.R1_*.fastq.gz
+and if paired-end data:
 SampleID*.R2_*.fastq.gz 
+
+If you use ChIP-seq, the input files should be written as follows: 
+
+Input_SampleID*.R1_*.fastq.gz
+
+
 The pipeline will split the filename by "." and take as sampleID the first element which in our example is "SampleID". Then it will look for the R1 or R2 and the fastq.gz. If your fastq files are not written this way the pipeline will FAIL. 
+
+
+
 
 ##### Bam Files
 Bam files need to be written as following: 
