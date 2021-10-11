@@ -3,12 +3,7 @@
 
 ## Pipeline for High-throughput sequencing data.
 
-This is a document explaining how the pipeline works.
-The pipeline is split in multiple steps. Depending on the type of data you are using, different steps will be ran. 
-
-The pipeline works with a configuration file that contains all the paths for the software to be used and the different commands to be used per step. 
-
-You can run the whole pipeline or specify which step(s) you want to run.
+This pipeline allows to process ATAC-/ChIP- or RNA-seq data from fastq to peak calls / gene expression.
 
 ## How to use the pipeline 
 
@@ -64,15 +59,43 @@ The different arguments of the pipeline are:
 | **-t** | Tasks to be ran. It can be an integer from 1 to 8 or "all" which specifies run all steps |
 
 The arguments in bold are required for the pipeline no matter whether you run all the steps or specific steps. 
-The arguments that you specify really depend on the steps you wan to run. 
 
-The pipeline can process ATACseq, ChIPseq and RNAseq data. You need to specify the technology in the configuration file. If you want to run all tasks, then the pipeline will know which steps to run. 
-Each technology has its own specific steps. 
+The **configuration file** contains all the necessary paths to software and all the parameters you want to use for each task. Below is an snippet of the configuration file. 
+```
 
-ATACseq: 1, 2, 3, 4, 4.1, 5, 6, 7, 8
-ChIPseq: 1, 2, 3, 4, 5, 6, 7, 8
-RNAseq: 2,4,9
+#### ANNOTATION FILES #####
+#annotation, /srv/beegfs/scratch/groups/funpopgen/data/annotations/gencode.v19.annotation.nochr.gtf
+annotation,/srv/beegfs/scratch/shares/brauns_lab/data/annotations/mus_musculus/Mus_musculus.GRCm38.102.modified.txt
+###########################
 
+#### PAIRED-END or NOT ####
+#Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
+pairend,0
+############################
+
+# Are you mapping ATAC-seq, ChIP-seq or RNAseq data?
+technology,RNAseq
+
+#### READ TRIMMING OPTIONS ####
+#Example of how a cutadapt commands looks like
+#cutadapt -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 -o testFile_R1_001.trim.fastq.gz -p testFile_R2_001.trim.fastq.gz testFile_R1_001.fastq.gz testFile_R2_001.fastq.gz
+#If you want to modify the parameters used, you can comment the line below, and add what you want.
+trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5
+###############################
+
+#### MAPPER ####
+#Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
+mapper,STAR
+#mapper,bowtie2
+################
+```
+
+All lines starting with a # are not read by the pipeline. 
+
+The lines that the pipeline are read need to be specially formated. They should always start with a keyword, as follows: 
+**keyword, parameters to use**
+
+Be careful to write the keyword correctly otherwhise the pipeline will not work!
 
 
 ##Steps of the pipeline 
