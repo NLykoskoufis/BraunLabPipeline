@@ -1,5 +1,5 @@
 
-<img src="Pipeline.png",style="float: center;margin-right: 10px" />
+![](Pipeline.png)
 # BraunPipeline 
 ## Pipeline for processing ATACseq, ChIPseq and RNAseq data from fastq to peak counts / gene expression.
 
