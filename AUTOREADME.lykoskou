@@ -42,3 +42,13 @@ git pull origin
 git pull origin
 #[2021-09-15 10:53:50 AM]
 git pull origin
+#[2021-10-11 10:39:21 AM]
+cd braunATACpipeline
+#[2021-10-11 10:39:24 AM]
+lh
+#[2021-10-11 10:43:02 AM]
+vim configuration_file.txt
+#[2021-10-11 02:32:49 PM]
+cd braunATACpipeline
+#[2021-10-11 02:32:49 PM]
+lh

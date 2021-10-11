@@ -32,6 +32,12 @@ class verbose:
         print("  * ", end='')
         print(s)
     
+    def boldBullet(s):
+        print("  * ", end='')
+        print(bcolors.BOLD,end='')
+        print(s)
+        print(bcolors.ENDC,end='')
+    
     def warning(s):
         print(bcolors.WARNING,end='')
         print(s)

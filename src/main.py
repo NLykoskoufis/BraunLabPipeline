@@ -9,9 +9,8 @@ from collections import defaultdict
 import uuid
 import glob
 from datetime import datetime
-from pipeline_tools.slurmTools import catchJID
 import json
-from pipeline_tools.submitSteps import submitFeatureCountsGeneQuantification, submitJobCheck, submitJobCheck2, submitMappingSTAR
+
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -43,7 +42,25 @@ Pipeline for Processing ATACseq, ChIP-seq and RNAseq data
 #===============================================================================
 """
 
-parser = argparse.ArgumentParser(description='Pipeline to process data from illumina sequencers.')
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+parser = argparse.ArgumentParser(description='''
+HTSD Pipeline
+ *  Authors     : Nikolaos Lykoskoufis / Simon Braun  
+ *  Contact     : nikolaos.lykoskoufis@unige.ch / simon.braun@unige.ch  
+ *  Webpage     : https://github.com/NLykoskoufis/braunATACpipeline 
+ *  Version     : 1.0
+ *  Description : Pipeline to process High throughput sequencing data.''',formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-v', dest='version', action='store_true', help='Display pipeline version')
 #If user is asking for version
 if len(sys.argv) > 1:
@@ -58,7 +75,7 @@ parser.add_argument('-bam', '--bam-dir', dest='bam_dir', type=str, help='Path ba
 parser.add_argument('-peak', '--peak-dir', dest='peaks_dir', type=str, help='Path peak diretory, is multiple, separate with space.')
 
 #parser.add_argument('-sortedBam','--sorted-bam-dir', dest='sorted_bam_dir', type=str, help='Path to sorted bam directory, if not set, first bam directory is used.')
-parser.add_argument('-eqd','--quant-dir', '-quantification_dir', dest='eq_dir', type=str, help='Absolut path peak calling diretory')
+parser.add_argument('-eqd','--quant-dir', '-quantification_dir', dest='eq_dir', type=str, help='Absolut path quantifications diretory')
 parser.add_argument('-bed', '--bed-dir', dest='bed_dir', type=str, help='Absolut path of where to save/read bed files')
 parser.add_argument('-bw', '--bigwig-dir', dest='bigwig_dir', type=str, help='Absolut path peak calling diretory')
 parser.add_argument('-od', '--output-dir', dest='output_dir', type=str, help='Path to output directory. Use it only if you do not run the pipeline from step')
@@ -105,8 +122,6 @@ configFileDict['ATACseqQC'] = f"{scripts_path}/fragmentSizeDist.R"
 configFileDict['ATACbamQC'] = f"{scripts_path}/atacQC_stats.R"
 configFileDict['bam2bed_script'] = f"{scripts_path}/bam2bed.sh"
 configFileDict['zipDirectoryScript'] = f"{pipeline_tools_path}/zipDirectory.py"
-
-
 
 
 #get list of tasks
@@ -157,21 +172,73 @@ configFileDict["pipeline_path"] = pipeline_path
 ### WHICH STEPS ARE GOING TO BE RAN AND CHECK WHETHER ALL DIRECTORIES WERE GIVEN 
 configFileDict['task_list'] = task_list 
 
+
+###### OUTPUTING PARAMETERS USED AND TASKS SELECTED TO RUN ########
+PIPELINE_LOGO="""\n
+        ########   ########       ##      ##    ## ##     ## ## ########
+        ##     ##  ##     ##     ## ##    ##    ## ###    ##    ##
+        #######    ########     ##   ##   ##    ## ## ##  ##    ########
+        ##     ##  ##     ##   ## ### ##  ##    ## ##  ## ##          ## 
+        ########   ##      ## ##       ##  ######  ##    ###    ########      
+
+        ########  ##  ########  ########  ##       ##  ##     ##  ########
+        ##    ##  ##  ##    ##  ##        ##       ##  ###    ##  ##
+        #######   ##  #######   ######    ##       ##  ## ##  ##  ######
+        ##        ##  ##        ##        ##       ##  ##  ## ##  ##
+        ##        ##  ##        ########  ######## ##  ##    ###  ########\n"""
+print(PIPELINE_LOGO)
+
+print(f"//=========================={bcolors.BOLD} Pipeline Settings {bcolors.ENDC} ==========================\\\\")
+print("||")
+
+print(f"||    * Processing {bcolors.OKCYAN}{bcolors.BOLD}{configFileDict['technology']}{bcolors.ENDC} data")
+if args.task == "all":
+    print("||    * Running all tasks:", " ".join(task_list))
+else:
+    print("||    * Running tasks:", " ".join(task_list))
+
+print(f"||    * {bcolors.BOLD}configuration file{bcolors.ENDC}: [{args.config_file_path}]")
+print(f"||    * {bcolors.BOLD}raw dir{bcolors.ENDC}: [{args.raw_dir}]")
+
+if args.output_dir and args.output_dir != args.raw_dir: 
+    print(f"||    * {bcolors.BOLD}output dir{bcolors.ENDC}: [{args.output_dir}]")
+else: 
+    print(f"||{bcolors.WARNING}{bcolors.BOLD}    * output dir is the same as raw dir!{bcolors.ENDC}")
+
+if args.fastq_dir:
+    print(f"||    * {bcolors.BOLD}fastq dir{bcolors.ENDC}: [{args.fastq_dir}]")
+if args.bed_dir: 
+    print(f"||    * {bcolors.BOLD}bed dir{bcolors.ENDC}: [{args.bed_dir}]")
+if args.peaks_dir: 
+    print(f"||    * {bcolors.BOLD}peak dir{bcolors.ENDC}: [{args.peaks_dir}]")
+if args.bam_dir: 
+    print(f"||    * {bcolors.BOLD}bam dir{bcolors.ENDC}: [{args.bam_dir}]")
+if args.bigwig_dir: 
+    print(f"||    * {bcolors.BOLD}bw dir{bcolors.ENDC}: [{args.bigwig_dir}]")
+if args.eq_dir: 
+    print(f"||    * {bcolors.BOLD}quantification dir{bcolors.ENDC}: [{args.eq_dir}]")
+print("||")
+print(f"//========================================================================\\\\")
+
 # ===========================================================================================================
 STEP1 = "CHECKING STEPS AND ADDING DIRECTORIES IN DICTIONARY AND CREATING THEM"
 # ===========================================================================================================
+
+print(f"\n  {bcolors.BOLD}* Checking and creating directories for steps{bcolors.ENDC}\n")
+
 
 #Create raw log directory
 if checkDir(configFileDict['raw_log']):
     vrb.bullet("Directory already exists. All log files will be written here.")
 else: 
+    #vrb.bullet("Creating raw log directory.")
     createDir(configFileDict['raw_log'])
 
 
 if '1' in task_list: 
     if not args.fastq_dir:
         vrb.error("ERROR. you need to specify a fastq directory.")
-    else: 
+    else:
         configFileDict['fastq_dir'] = args.fastq_dir 
     
     if args.output_dir:
@@ -184,10 +251,9 @@ if '1' in task_list:
     else: 
         createDir(configFileDict['trimmed_fastq_dir'])
         createLog(configFileDict['trimmed_fastq_dir'])
-
+    print(f" * {bcolors.OKGREEN}Task 1 directory checks done{bcolors.ENDC}")
 
 if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
-    print("Entering 1.1")
     
     if not args.fastq_dir:
         vrb.error("ERROR. you need to specify a fastq directory.")
@@ -202,12 +268,13 @@ if '1.1' in task_list: # QC of fastq files and multiQC to combine all of them
         configFileDict['fastQC_dir'] = f"{args.output_dir}/fastQC"
     else: 
         configFileDict['fastQC_dir'] = f"{args.raw_dir}/fastQC"
-        print(configFileDict['fastQC_dir'])
+        #print(configFileDict['fastQC_dir'])
     if checkDir(configFileDict['fastQC_dir']): 
         vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
     else: 
         createDir(configFileDict['fastQC_dir'])
         createLog(configFileDict['fastQC_dir'])
+    print(f" * {bcolors.OKGREEN}Task 1.1 directory checks done{bcolors.ENDC}")
 
 
 
@@ -232,7 +299,6 @@ if '2' in task_list:
             createDir(configFileDict['bam_dir'])
             createLog(configFileDict['bam_dir'])
     elif configFileDict['technology'] == "RNAseq":
-        print("mapping RNA seq")
         if '1' not in task_list: 
             if not args.fastq_dir: 
                 vrb.error("ERROR. You need to specify a fastq directory")
@@ -252,7 +318,8 @@ if '2' in task_list:
     
     else: 
         vrb.error("You need to specify a technology [ATACseq, ChIPseq, RNAseq] for the pipeline to work.")
-        
+    print(f" * {bcolors.OKGREEN}Task 2 directory checks done{bcolors.ENDC}")
+    
 
 if '3' in task_list: ### PCR DUPLICATES MARK
     if '2' not in task_list: 
@@ -271,7 +338,8 @@ if '3' in task_list: ### PCR DUPLICATES MARK
     else: 
         createDir(configFileDict['marked_bam_dir'])
         createLog(configFileDict['marked_bam_dir'])
-    
+    print(f" * {bcolors.OKGREEN}Task 3 directory checks done{bcolors.ENDC}")
+
     
 
 if '4' in task_list: ### FILTER/SORT/INDEX BAM FILES
@@ -291,6 +359,7 @@ if '4' in task_list: ### FILTER/SORT/INDEX BAM FILES
     else: 
         createDir(configFileDict['filtered_bam_dir'])
         createLog(configFileDict['filtered_bam_dir'])    
+    print(f" * {bcolors.OKGREEN}Task 4 directory checks done{bcolors.ENDC}")
 
 
 if '4.1' in task_list or '4.2' in task_list: # Create fragment Size distribution plots. 
@@ -309,6 +378,7 @@ if '4.1' in task_list or '4.2' in task_list: # Create fragment Size distribution
     else: 
         createDir(configFileDict['bamQC_dir'])
         createLog(configFileDict['bamQC_dir']) 
+    print(f" * {bcolors.OKGREEN}Task 4.1 directory checks done{bcolors.ENDC}")
 
 if '5' in task_list: ## CREATE BIGWIG
     if '4' not in task_list: 
@@ -327,7 +397,8 @@ if '5' in task_list: ## CREATE BIGWIG
     else: 
         createDir(configFileDict['bw_dir'])
         createLog(configFileDict['bw_dir']) 
-        
+    print(f" * {bcolors.OKGREEN}Task 5 directory checks done{bcolors.ENDC}")
+
 if '6' in task_list: #### BAM 2 BED 
     if '4' not in task_list: 
         if not args.bam_dir: 
@@ -345,7 +416,8 @@ if '6' in task_list: #### BAM 2 BED
     else: 
         createDir(configFileDict['bed_dir'])
         createLog(configFileDict['bed_dir']) 
-    
+    print(f" * {bcolors.OKGREEN}Task 6 directory checks done{bcolors.ENDC}")
+   
         
 if '7' in task_list: 
     if '6' not in task_list: 
@@ -385,6 +457,7 @@ if '8' in task_list:
             createLog(configFileDict['peaks_dir'])
     else: 
         vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
+    print(f" * {bcolors.OKGREEN}Task 7 directory checks done{bcolors.ENDC}")
 
 if '8.1' in task_list:
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": 
@@ -411,6 +484,7 @@ if '8.1' in task_list:
             createLog(configFileDict['peakCounts_dir'])
     else: 
         vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
+    print(f" * {bcolors.OKGREEN}Task 8.1 directory checks done{bcolors.ENDC}")
 
 
 
@@ -432,11 +506,11 @@ if '9' in task_list: # EXON QUANTIFICATION
     else: 
         createDir(configFileDict['quantification_dir'])
         createLog(configFileDict['quantification_dir'])
+    print(f" * {bcolors.OKGREEN}Task 9 directory checks done{bcolors.ENDC}")
 
 
 
 if 'report' in task_list: 
-    vrb.bullet("Creating the report of the run")
     if 'report' in task_list and len(task_list) == 1:
         vrb.error("The report step is used only in case you run all the steps.")
     if args.output_dir:
@@ -448,6 +522,7 @@ if 'report' in task_list:
     else:
         createDir(configFileDict['report_dir'])
         createLog(configFileDict['report_dir'])
+    print(f" * {bcolors.OKGREEN}Report directory checks done{bcolors.ENDC}")
 
 
 
@@ -455,9 +530,9 @@ if 'report' in task_list:
 ##### START TASKS ###### 
 ########################
 
-vrb.bullet("Starting\n")
-vrb.bullet(f"Unique ID of this run: {str(configFileDict['uid'])}\n")
-vrb.bullet(task_list)
+vrb.boldBullet("Starting\n")
+print(bcolors.BOLD + "  * Unique ID of this run: " + bcolors.ENDC + bcolors.OKBLUE + str(configFileDict['uid']) + bcolors.ENDC + "\n")
+#vrb.bullet(task_list)
 task_dico = {} ### Dictionary containing for each task the wait_key so that I can automatically find out which is the last run task and get the wait_key instead of checking all of them one by one with if statements.
 task_log_dico = {}
 
@@ -466,8 +541,8 @@ task_log_dico = {}
 STEP1 = "Trimming reads"
 # ===========================================================================================================
 
-if '1' in task_list: 
-    vrb.bullet("Running trimming of reads.\n")
+if '1' in task_list:
+    vrb.boldBullet("Submitting trimming of reads.\n")
         
     fastq_dir = configFileDict['fastq_dir']
     FASTQ_FILES = getFastqPrefix(fastq_dir)
@@ -485,14 +560,14 @@ STEP1_1 = "FASTQC"
 # ===========================================================================================================
 
 if '1.1' in task_list: 
-    vrb.bullet("Running QC of fastq files\n")
+    vrb.boldBullet("Submitting QC of fastq files\n")
     configFileDict['fastqQC_log_files'] = []
     FASTQC_WAIT = submitFastQC(configFileDict)
     configFileDict['FASTQC_WAIT'] = FASTQC_WAIT
     #submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
     task_dico['1.1'] = "FASTQC_WAIT"
     
-    vrb.bullet("Running multiqc to get all FastQC in a single report\n")
+    vrb.boldBullet("Submitting multiqc to get all FastQC in a single report\n")
     configFileDict['multiqc_log_files'] = []
     FASTQC_WAIT = submitMultiQC(configFileDict)
     #submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)    
@@ -504,7 +579,7 @@ STEP2 = "Mapping reads / sorting bam files"
 # ===========================================================================================================
        
 if '2' in task_list: 
-    vrb.bullet("Running mapping of reads.\n")
+    vrb.boldBullet("Submitting mapping of reads.\n")
     configFileDict['mapping_log_files'] = []
     if '1' not in task_list:
         FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
@@ -520,7 +595,7 @@ if '2' in task_list:
     elif configFileDict['mapper'] == "STAR":
         MAP_WAIT = submitMappingSTAR(configFileDict, FASTQ_PREFIX)    
     else: 
-        print("You need to specify a mapper")
+        vrb.error("You need to specify a mapper")
     
     configFileDict['MAP_WAIT'] = MAP_WAIT                
     #submitJobCheck(configFileDict,'mapping_log_files',MAP_WAIT)
@@ -533,7 +608,7 @@ STEP3 = "Marking duplicated reads"
 # ===========================================================================================================
         
 if '3' in task_list:
-    vrb.bullet("Running PCR duplication detection using PICARD\n")
+    vrb.boldBullet("Submitting PCR duplication detection using PICARD\n")
     configFileDict['pcr_log_files'] = []
     if '1' in task_list or '2' in task_list:
         BAM_FILES = ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'],i) for i in configFileDict['sample_prefix']]
@@ -554,7 +629,7 @@ STEP4 = "Filtering reads and indexing bam file"
 # ===========================================================================================================  
 
 if '4' in task_list: 
-    vrb.bullet("Running filtering and sorting of BAM files\n")
+    vrb.bullet("Submitting filtering and sorting of BAM files\n")
     configFileDict['filtering_log_files'] = []
     if '3' not in task_list:    
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['marked_bam_dir']))
@@ -574,7 +649,7 @@ STEP4_1 = "FragmentSizeDist plot. QC STEP"
 # ===========================================================================================================
 
 if '4.1' in task_list:
-    vrb.bullet("Generating ATACseq Fragment size distribution plots")
+    vrb.boldBullet("Submitting creation of ATACseq Fragment size distribution plots")
     configFileDict['atacQC_log_files'] = []
     if '4' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
@@ -593,7 +668,7 @@ STEP4_2 = "QC STEP: bamQC"
 # ===========================================================================================================
 
 if '4.2' in task_list:
-    vrb.bullet("Generating bamQC stats")
+    vrb.boldBullet("Submitting bamQC stats generation")
     configFileDict['bamQC_log_files'] = []
     
     if '4' not in task_list:
@@ -615,7 +690,7 @@ STEP5 = "BIG WIG files creation."
 # ===========================================================================================================   
 
 if '5' in task_list: 
-    vrb.bullet("Generating bigwig files for visualization")
+    vrb.boldBullet("Submitting BAM to bigwig")
     configFileDict['bw_log_files'] = []
     if '4' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
@@ -636,7 +711,7 @@ STEP6 = "BAM 2 BED"
 # ===========================================================================================================   
 
 if '6' in task_list: # Need to wait for '4' or none
-    vrb.bullet("Running bam2bed")
+    vrb.bullet("Submitting bam2bed")
     configFileDict['bam2bed_log_files'] = []
     if '4' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
@@ -657,7 +732,7 @@ STEP7 = "Extend bed reads"
 # ===========================================================================================================   
 
 if '7' in task_list:
-    vrb.bullet("Running extension of reads in bed file")
+    vrb.bullet("Submitting extension of reads in bed file")
     configFileDict['extend_log_files'] = []
     if '4' not in task_list:
         BED_FILES = glob.glob("{}/*.bed".format(configFileDict['bed_dir']))
@@ -677,7 +752,7 @@ STEP8 = "PEAK CALLING"
 # ===========================================================================================================
 
 if '8' in task_list: 
-    vrb.bullet("Running peak calling\n")
+    vrb.boldBullet("Submitting peak calling\n")
     configFileDict['peak_log_files'] = []
     if configFileDict['technology'] == "ATACseq":
         if '7' not in task_list: 
@@ -702,11 +777,11 @@ if '8' in task_list:
             configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
         else: 
             FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
-            print(FILES)
+            #print(FILES)
             INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
             SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
             BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
-            print(BED_FILES)
+            #print(BED_FILES)
             PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES)
             configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
     else:
@@ -723,7 +798,7 @@ STEP8_1 = "PEAK2COUNTS"
 # ===========================================================================================================
 
 if '8.1' in task_list: 
-    vrb.bullet("Running peak 2 Counts\n")
+    vrb.bullet("Submitting peak 2 Counts\n")
     configFileDict['peak2Count_log_files'] = []
     if '8' not in task_list : 
         NARROWPEAK_FILES = glob.glob("{}/*.MACS/*.narrowPeak".format(configFileDict['peaks_dir']))
@@ -751,7 +826,7 @@ STEP9 = "EXON QUANTIFICATION - EXCLUSIVE FOR RNASEQ DATA"
 # ===========================================================================================================
 
 if '9' in task_list:
-    vrb.bullet("Running exon/gene quantification\n")
+    vrb.boldBullet("Submitting exon/gene quantification\n")
     configFileDict['quant_log_files'] = []
     if '2' not in task_list:
         BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
