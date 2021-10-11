@@ -152,11 +152,8 @@ The pipeline will split the filename by "." and take as sampleID the first eleme
 
 
 
-##### Bam Files
-Bam files need to be written as following: 
-sampleID.*.bam 
-The asterisk can be whatever. The pipeline splits the file name by "." and takes the first element as sampleID in this case the sample ID is "sampleID" and disregards the rest. 
-
+##### All other files
+All files should start with SampleID.whatever and Input_SampleID.whatever (if ChIP-seq data).
 
 ##### Running the whole pipeline 
 If you run the whole pipeline, then you need to specify: 
