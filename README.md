@@ -1,7 +1,7 @@
 
 ![](Pipeline.png)
 # BraunPipeline 
-## Pipeline for processing ATACseq, ChIPseq and RNAseq data from fastq to peak counts / gene expression.
+## Pipeline for High-throughput sequencing data.
 
 This is a document explaining how the pipeline works.
 The pipeline is split in multiple steps. Depending on the type of data you are using, different steps will be ran. 
