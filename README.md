@@ -1,6 +1,6 @@
 
 ![](Pipeline.png)
-# BraunPipeline 
+
 ## Pipeline for High-throughput sequencing data.
 
 This is a document explaining how the pipeline works.
