@@ -1,5 +1,5 @@
 
-![](Pipeline.png)
+![](BraunLabPipeline.png)
 
 ## Pipeline for High-throughput sequencing data.
 
@@ -90,47 +90,64 @@ mapper,STAR
 ################
 ```
 
-All lines starting with a # are not read by the pipeline. 
+All lines starting with a **#** are not read by the pipeline. 
 
-The lines that the pipeline are read need to be specially formated. They should always start with a keyword, as follows: 
+The lines that the pipeline are read need to be specially formatted. They should always start with a keyword, as follows: 
 **keyword, parameters to use**
 
-Be careful to write the keyword correctly otherwhise the pipeline will not work!
-
+Keywords are essential in the configuration file because they are recognised by the pipeline as is. 
 
 #Steps of the pipeline 
 
-### Trimming reads 
+### Task 1: Trimming of reads 
 
-This steps allows to trim reads either to remove sequencing adapters or shorten the read length. We use cutadapt for the read trimming. 
+### Task 1.1: QC of fastq files
 
-### Mapping reads 
+### Task 2: Mapping 
 
-This step maps reads. Depending whether you have ATAC-seq/ChIP-seq or RNAseq data, the mapper will be different. 
+The mapping software compatible with the pipeline are: 
 
-### Sort bam files by coordinates. 
-This step has to be done because PICARD requires sorted by coordinate bam files. 
+- STAR (RNAseq data)
+- bowtie2 (ChIP-seq / ATAC-seq)
 
-### Mark PCR duplicates
-This step marks duplicated reads using PICARD.
+### Task 3: Marking duplicated reads 
 
-### Filtering, sorting and indexing bam file
-This step removes duplicated reads, low quality reads, chrM the bam files. Then it sorts and index. 
+This step is not used for RNA-seq data processing since removal of duplicated reads. 
 
-### CREATE .bw for visualization.
-This step reads the bam files and created .bw files for visualization using IGV for exmample.
+### Task 4: Filtering low quality read & MT reads & duplicates 
 
-### bam2bed 
-This step converts bam files to UCSC bed files. 
+This step is only used for ChIP-seq or ATAC-seq data.
 
-### Bed file with extended reads 
-This step extends the reas on the bed files depending on the given extension provided
+### Task 4.1: Fragment size distribution QC 
 
-### PEAK Calling
-This step performs peak calling using MACS2. This is a step unique to ATAC-seq or ChIP-seq data.
+This task is reserved for ATAC-seq data. 
 
-### Exon quantification
-TBD
+### Task 4.2: QC of bam files. 
+
+### Task 5: Bam to BW 
+
+### Task 6: Bam to Bed 
+
+This step is reserved for ChIP-seq and ATAC-seq data.
+
+### Task 7: Read extension
+
+This step is reserved for ChIP-seq and ATAC-seq data. 
+
+### Task 8: Peak calling 
+
+This step is reserved for ChIP-seq and ATAC-seq data. 
+
+### Task 8.1: Peak quantification 
+
+This step is reserved for ChIP-seq and ATAC-seq data. 
+
+For each sample, we concatenate all peaks into a single annotation bed file. We then merge peaks that are up to 1kb far away. Then, we count for each sample, the reads overlapping each peak. 
+
+### Task 9: Gene quantification 
+
+This step is reserved for RNA-seq data.
+
 
 ## File naming convention
 
@@ -146,105 +163,20 @@ If you use ChIP-seq, the input files should be written as follows:
 
 Input_SampleID*.R1_*.fastq.gz
 
+***If you do not respect the naming convention, the pipeline will FAIL***
 
-The pipeline will split the filename by "." and take as sampleID the first element which in our example is "SampleID". Then it will look for the R1 or R2 and the fastq.gz. If your fastq files are not written this way the pipeline will FAIL. 
+All other files should start with SampleID.whatever and Input_SampleID.whatever (if ChIP-seq data).
 
 
+# Running the pipeline 
+
+You have the option to run all tasks of the pipeline or specify which steps you want to run. If you run the whole pipeline in one go, then you need to specify the --task; --raw-dir; --fastq-dir; -cf
+; parameters. 
+
+Otherwhise, depending on the tasks you decide to run, you will need to use different combination of parameters. For example to convert bam files to bed files you will need to use --task; --raw-dir; --bam-dir; -cf. Or if you want to run task 8 (peak calling), then you need to use --task; --raw-dir; --bed-dir; -cf.
 
 
-##### All other files
-All files should start with SampleID.whatever and Input_SampleID.whatever (if ChIP-seq data).
-
-##### Running the whole pipeline 
-If you run the whole pipeline, then you need to specify: 
--cf
--raw 
--t 
--fastq
-
-The pipeline will read the configuration file and run all steps and save the results under the raw directory given. No need to specify the directories, they are automatically created by the pipeline. IF the raw directory contains any of the other directories that will be created automatically by the pipeline, then it throws an error. For example if you already had created the bam directory under the raw directory, the pipeline will throw an error stating that the bam directory already exists and will stop. This is to prevent overwriting or erasing files by mistake. 
-
-##### Running step 1
-```bash 
-python3 main.py -cf -raw -fastq -t
-```
-##### Running step 1.1
-
-```bash 
-python3 main.py -cf -raw -fastq -t
-```
-
-##### Running step 2 or from step 2
-```bash 
-python3 main.py -cf -raw  -fastq -od -t
-```
-##### Running step 3 or from step 3
-```bash 
-python3 main.py 
-    -cf 
-    -raw
-    -bam 
-    -od
-    -t 
-```
-##### Running step 4 or from step 4
-```bash 
-python3 main.py
-    -cf 
-    -raw 
-    -bam 
-    -od 
-    -t 
-```
-
-##### Running step 4.1 or from step 4
-```bash 
-python3 main.py
-    -cf 
-    -raw 
-    -bam 
-    -od 
-    -t 
-```
-
-##### Running step 5 or from step 5
-```bash 
-python3 main.py
-    -cf 
-    -raw 
-    -bam 
-    -od 
-    -t 
-```
-##### Running step 6 or from step 6
-```bash 
-python3 main.py
-    -cf 
-    -raw 
-    -bam 
-    -od 
-    -t 
-```
-##### Running step 7 or from step 7
-```bash 
-python3 main.py
-    -cf 
-    -raw 
-    -bed
-    -od 
-    -t
-```
-##### Running step 8 or from step 8
-```bash 
-python3 main.py 
-    -cf
-    -raw 
-    -bed 
-    -d 
-    -t 
-```
-
-#### Directory tree generated by pipeline
+### Directory tree generated by pipeline
 
 ```bash 
 raw_dir
