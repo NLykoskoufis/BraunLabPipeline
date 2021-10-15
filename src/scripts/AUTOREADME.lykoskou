@@ -1,0 +1,14 @@
+#[2021-07-31 08:48:11 AM]
+cd ../scripts
+#[2021-07-31 08:48:11 AM]
+lh
+#[2021-07-31 08:48:15 AM]
+cp /srv/nasac.unige.ch/funpopgen/data/unige/funpopgen/project/processed_data/syscol/STAR_mapping/merge_junctions .
+#[2021-07-31 08:48:21 AM]
+cp /srv/nasac.unige.ch/funpopgen/data/unige/funpopgen/project/processed_data/syscol/STAR_mapping/merge_junctions.pl .
+#[2021-07-31 08:48:48 AM]
+lh
+#[2021-09-16 04:47:03 PM]
+../../../../../Tools/braunATACpipeline/src/scripts
+#[2021-09-16 04:47:05 PM]
+lh
