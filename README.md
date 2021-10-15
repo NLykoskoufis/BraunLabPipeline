@@ -1,5 +1,5 @@
 
-![](Pipeline.png)
+![](BraunLabPipeline.png)
 
 ## Pipeline for High-throughput sequencing data.
 
