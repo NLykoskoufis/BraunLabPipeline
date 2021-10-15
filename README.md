@@ -56,7 +56,9 @@ Nikolaos Lykoskoufis: nikolaos.lykoskoufis@unige.ch
 | 9 | Gene quantification \*\*\* |
 
 \* Exclusive for ATAC-seq data
+
 \*\* Exclusive for ATAC-seq and ChIP-seq data 
+
 \*\*\* Exclusive for RNA-seq data
 
 ## Command line <a name="commandLine"></a>
