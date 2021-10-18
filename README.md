@@ -39,6 +39,9 @@ Nikolaos Lykoskoufis: nikolaos.lykoskoufis@unige.ch
 
 ## Task list <a name="TaskList"></a>
 
+The pipeline can be used to do many things. You can run each task separately (only run  filtering reads for example) or you can run the whole thing in one go. Calling task "all" will run all task. Here is the list of tasks you can run and what they each do:
+
+
 | Task | Description | 
 |:----:|:-----------:|
 |1     | Trimming of reads |
@@ -62,11 +65,81 @@ Nikolaos Lykoskoufis: nikolaos.lykoskoufis@unige.ch
 \*\*\* Exclusive for RNA-seq data
 
 ## Command line <a name="commandLine"></a>
+Each task require some arguments. Here is the exhaustive list of arguments you can provide for each task. 
+
+| Argument | Definition |
+|:---:|:-------------------------------------------:|
+| **-cf**  | Absolute path to the configuration file |
+| **-raw** | Absolute path to the raw directory \* |
+| -od | Absolute path to the output directory | 
+| -fastq | Abolute path to the fastq directory | 
+| -bam | Absolute path to the bam directory | 
+| -eqd | Absolute path to the quantification directory | 
+| -bed | Absolute path to the bed directory | 
+| -bw | Absolute path to the bigwid directory | 
+| **-t** | Tasks to be ran. It can be an integer from 1 to 8 or "all" which specifies run all steps |
+
+The arguments in bold are required for the pipeline no matter whether you run all the steps or specific steps. 
+
+\* The raw directory can be used as the output directory as well. If you run the whole pipeline (all tasks), the raw directory is where all subfolders for each task will be generated. Be careful that the specified does not contain subfolders named similarly as the ones generated from the pipeline. For example, if you run task 2 (mapping), the pipeline will try to create a subfolder "bam" inside the raw directory. If another "bam" subfolder is already present then the pipeline will through an error. 
+
+If you want to run tasks separately, below you will find the required arguments to pass on the command line. 
 
 
+
+| Task | options required | 
+|:----:|:----------------:|
+| **all**  | -raw -fastq -cf -t | 
+| **1**    | -raw -fastq -cf -t | 
+| **1.1**  | -raw -fastq -cf -t | 
+| **2**    | -raw -fastq -cf -t | 
+| **3**    | -raw -bam -cf -t | 
+| **4**    | -raw -bam -cf -t | 
+| **4.1**  | -raw -bam -cf -t | 
+| **4.2**  | -raw -bam -cf -t | 
+| **5**    | -raw -bam -cf -t | 
+| **6**    | -raw -bam -cf -t | 
+| **7**    | -raw -bed -bam -cf -t | 
+| **8**    | -raw -bed -bam -cf -t | 
+| **8.1**  | -raw -peak -cf -t | 
+| **9**    | -raw -bam -cf -t | 
+
+This table summarizes mandatory options for each task if there are run separately. All task require the configuration fil (-cf), -t and -raw options. 
 
 # Output <a name="output"></a>
 
+Each task creates files which are written in specific directories as can be seen in the picture below. 
+
+```bash 
+raw_dir
+├── ATACseqQC
+│   └── log
+├── bam
+│   └── log
+├── bed
+│   └── log
+├── bigwig
+│   └── log
+├── extended_bed
+│   └── log
+├── fastq
+├── fastQC
+│   ├── log
+│   └── multiqc_data
+├── filtered_bam
+│   └── log
+├── log
+├── marked_bam
+│   └── log
+├── peaks
+│   └── log
+├── report
+│   └── log
+├── sorted_bam
+│   └── log
+└── trimmed_fastq
+    └── log
+```
 
 
 
@@ -108,9 +181,11 @@ The lines that the pipeline are read need to be specially formatted. They should
 **keyword, parameters to use**
 
 Keywords are essential in the configuration file because they are recognised by the pipeline as is. 
+
+
+
 ## Prepare your data <a name="name_convention"></a>
 
-**This is very important!!!**
 ##### Fastq files
 Fastq files should be written in this specific way: 
 
