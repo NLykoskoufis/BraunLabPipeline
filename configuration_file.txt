@@ -120,31 +120,31 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #the comma is the path to the corresponding executable.
 
 #FastQC 
-FastQC,/home/users/l/lykoskou/Software/FastQC/fastqc
+FastQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/FastQC/fastqc
 
 #multiQC
-multiQC,/home/users/l/lykoskou/.local/bin/multiqc
+multiQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/multiqc/bin/multiqc
 
 #path to python 3.2
 python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
 
 #Path to cutadapt
-cutadapt,/home/users/l/lykoskou/.local/bin/cutadapt
+cutadapt,/srv/beegfs/scratch/shares/brauns_lab/Tools/cutadapt/bin/cutadapt
 
 #Bedtools 
-bedtools,/home/users/l/lykoskou/Software/bedtools2/bin/bedtools
+bedtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/bedtools2/bin/bedtools
 
 #Path to bowtie2
-bowtie2,/home/users/l/lykoskou/Software/bowtie2-2.4.4/bowtie2
+bowtie2,/srv/beegfs/scratch/shares/brauns_lab/Tools/bowtie2-2.4.4/bowtie2
 
 #Path to STAR
-star,/srv/beegfs/scratch/groups/funpopgen/Tools/STAR-2.7.5c/bin/Linux_x86_64_static/STAR
+star,/srv/beegfs/scratch/shares/brauns_lab/Tools/STAR-2.7.5c/bin/Linux_x86_64_static/STAR
 
 #Path to samtools
-samtools,/home/users/l/lykoskou/Software/samtools-1.12/samtools
+samtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/samtools
 
 #QTLtools
-QTLtools, /srv/beegfs/scratch/groups/funpopgen/bin/QTLtools
+QTLtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/qtltools/bin/QTLtools
 
 #Rscript
 Rscript,/opt/ebsofts/R/3.6.2-foss-2019b/bin/Rscript
@@ -156,13 +156,13 @@ picard,java -Xmx8g -jar /srv/beegfs/scratch/groups/funpopgen/bin/picard.jar
 wsbatch,/srv/beegfs/scratch/groups/funpopgen/bin/wsbatch
 
 #bamCoverage, 
-bamCoverage,/home/users/l/lykoskou/.local/bin/bamCoverage
+bamCoverage,/srv/beegfs/scratch/shares/brauns_lab/bin/bamCoverage
 
 #MACS2
 macs2,/home/users/l/lykoskou/Software/MACS2-2.2.7.1/bin/macs2
 
 #bedClip
-bedClip,/home/users/l/lykoskou/bin/bedClip
+bedClip,/srv/beegfs/scratch/shares/brauns_lab/bin/bedClip
 
 #plotBam 
 plotBam,/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/misc/plot-bamstats
