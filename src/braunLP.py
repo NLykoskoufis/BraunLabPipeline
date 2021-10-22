@@ -211,8 +211,9 @@ STEP1 = "CHECKING STEPS AND ADDING DIRECTORIES IN DICTIONARY AND CREATING THEM"
 
 #### PROGRESS BAR #####
 print(f"\n  {bcolors.BOLD}* Checking and creating directories for steps{bcolors.ENDC}\n")
-with Progress() as progress: 
-    task1 = progress.add_task("[red]Directories check", total=len(task_list))
+with Progress() as progress:
+    taskLength = len(task_list) -1
+    task1 = progress.add_task("[red]Directories check", total=taskLength)
 
     while not progress.finished:
 
@@ -236,7 +237,7 @@ with Progress() as progress:
                 configFileDict['trimmed_fastq_dir'] = f"{args.output_dir}/trimmed_fastq_dir"
             else: 
                 configFileDict['trimmed_fastq_dir'] = f"{args.raw_dir}/trimmed_fastq"
-            if checkDir(configFileDict['trimmed_fastq_dir']): 
+            if checkDir(configFileDict['trimmed_fastq_dir']):
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
                 createDir(configFileDict['trimmed_fastq_dir'])
@@ -461,7 +462,7 @@ with Progress() as progress:
                     createLog(configFileDict['peaks_dir'])
             else: 
                 vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
-            print(f" * {bcolors.OKGREEN}Task 7 directory checks done{bcolors.ENDC}")
+            print(f" * {bcolors.OKGREEN}Task 8 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
             
         if '8.1' in task_list:
@@ -509,6 +510,7 @@ with Progress() as progress:
             else: 
                 configFileDict['quantification_dir'] = f"{args.raw_dir}/quantification"
             if checkDir(configFileDict['quantification_dir']): 
+                print("fuck")
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
                 createDir(configFileDict['quantification_dir'])

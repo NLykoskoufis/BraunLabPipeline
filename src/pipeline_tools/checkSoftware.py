@@ -1,5 +1,8 @@
 #!/usr/bin/env python3 
 import subprocess 
+import re 
+
+FAIL=re.compile('''command not found''')
 
 class bcolors:
     HEADER = '\033[95m'
@@ -15,10 +18,13 @@ class bcolors:
 def checkSoftware(software):
     cmd = f"{software} --help"
     try:
-        out = subprocess.check_output(cmd, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        subprocess.check_output(cmd, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
         print(f"{software} {bcolors.OKGREEN}{bcolors.BOLD}installed{bcolors.ENDC}")
-    except subprocess.CalledProcessError:
-        print(f"{software} {bcolors.FAIL}not installed or not correct directory{bcolors.ENDC}")
+    except subprocess.CalledProcessError as e:
+        if FAIL.search(e.output):
+            print(f"{software} {bcolors.FAIL}not installed or not correct directory{bcolors.ENDC}")
+        else:
+            print(f"{software} {bcolors.OKGREEN}{bcolors.BOLD}installed{bcolors.ENDC}")
 
 print(" * Trying to load specific modules needed by the pipeline.")
 
@@ -43,11 +49,10 @@ except ModuleNotFoundError:
     print(f"{bcolors.FAIL}mdtable module not installed. INSTALLING...{bcolors.ENDC}")
     subprocess.check_output("pip3 install mdtable --user",shell=True,universal_newlines=True,stderr=subprocess.STDOUT)
 
-print(" * Checking whether required software by the pipeline can be accessed")
+print("\n * Checking whether required software by the pipeline can be accessed\n")
 
 
 #FastQC
-print(" * Checking fastQC") 
 FastQC="/srv/beegfs/scratch/shares/brauns_lab/Tools/FastQC/fastqc"
 checkSoftware(FastQC)
 
@@ -97,15 +102,10 @@ checkSoftware(macs2)
 
 #bedClip
 bedClip="/srv/beegfs/scratch/shares/brauns_lab/bin/bedClip"
-cmd = f"{bedClip}"
-try:
-    out = subprocess.check_output(cmd, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-    print(f"{bedClip} {bcolors.OKGREEN}{bcolors.BOLD}installed{bcolors.ENDC}")
-except subprocess.CalledProcessError:
-    print(f"{bedClip} {bcolors.FAIL}not installed or not correct directory{bcolors.ENDC}")
+checkSoftware(bedClip)
 
-#plotBam 
 plotBam="/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/misc/plot-bamstats"
-#checkSoftware(plotBam)
+checkSoftware(plotBam)
 
 print(" * Done :)")
+
