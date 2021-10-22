@@ -34,7 +34,7 @@ from datetime import datetime
 def combineBamQC(configFileDict, task_dico):
     vrb.bullet("Merge all bamQC statistics into single csv file.")
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
-        input_dir = configFileDict['atacQC_dir']
+        input_dir = configFileDict['bamQC_dir']
         output_dir = configFileDict['report_dir']
         output_log = configFileDict['report_dir'] + "/log"
         sampleID = configFileDict['sample_prefix']
@@ -47,7 +47,7 @@ def combineBamQC(configFileDict, task_dico):
 def copyPlot(configFileDict, task_dico):
     vrb.bullet("Copy all plots to report directory")
     if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
-        input_dir = configFileDict['atacQC_dir']
+        input_dir = configFileDict['bamQC_dir']
         output_dir = configFileDict['report_dir']
         output_log = configFileDict['report_dir'] + "/log"
         sampleID = configFileDict['sample_prefix']

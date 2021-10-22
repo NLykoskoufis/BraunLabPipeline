@@ -87,8 +87,6 @@ parser.add_argument('-cf','--configuration-file', dest='config_file_path', requi
 parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
 
 
-
-
 ####################
 #    CHECK ARGS    #
 ####################
