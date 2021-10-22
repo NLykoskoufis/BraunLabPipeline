@@ -107,5 +107,5 @@ checkSoftware(bedClip)
 plotBam="/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/misc/plot-bamstats"
 checkSoftware(plotBam)
 
-print(" * Done :)")
+print(f"\n * {bcolors.OKGREEN}{bcolors.BOLD}Done :){bcolors.ENDC}")
 
