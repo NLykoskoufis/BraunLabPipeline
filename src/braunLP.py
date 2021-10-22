@@ -55,7 +55,7 @@ class bcolors:
 
 
 parser = argparse.ArgumentParser(description='''
-HTSD Pipeline
+BraunLabPipeline
  *  Authors     : Nikolaos Lykoskoufis / Simon Braun  
  *  Contact     : nikolaos.lykoskoufis@unige.ch / simon.braun@unige.ch  
  *  Webpage     : https://github.com/NLykoskoufis/braunATACpipeline 
@@ -174,19 +174,6 @@ configFileDict['task_list'] = task_list
 
 
 ###### OUTPUTING PARAMETERS USED AND TASKS SELECTED TO RUN ########
-PIPELINE_LOGO="""\n
-        ########   ########       ##      ##    ## ##     ## ## ########
-        ##     ##  ##     ##     ## ##    ##    ## ###    ##    ##
-        #######    ########     ##   ##   ##    ## ## ##  ##    ########
-        ##     ##  ##     ##   ## ### ##  ##    ## ##  ## ##          ## 
-        ########   ##      ## ##       ##  ######  ##    ###    ########      
-
-        ########  ##  ########  ########  ##       ##  ##     ##  ########
-        ##    ##  ##  ##    ##  ##        ##       ##  ###    ##  ##
-        #######   ##  #######   ######    ##       ##  ## ##  ##  ######
-        ##        ##  ##        ##        ##       ##  ##  ## ##  ##
-        ##        ##  ##        ########  ######## ##  ##    ###  ########\n"""
-print(PIPELINE_LOGO)
 
 print(f"//=========================={bcolors.BOLD} Pipeline Settings {bcolors.ENDC} ==========================\\\\")
 print("||")
