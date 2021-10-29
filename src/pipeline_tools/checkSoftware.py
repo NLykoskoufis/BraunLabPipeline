@@ -1,6 +1,7 @@
 #!/usr/bin/env python3 
 import subprocess 
 import re 
+from pathlib import Path
 
 FAIL=re.compile('''command not found''')
 
@@ -20,11 +21,14 @@ def checkSoftware(software):
     try:
         subprocess.check_output(cmd, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
         print(f"{software} {bcolors.OKGREEN}{bcolors.BOLD}installed{bcolors.ENDC}")
+        return True
     except subprocess.CalledProcessError as e:
         if FAIL.search(e.output):
             print(f"{software} {bcolors.FAIL}not installed or not correct directory{bcolors.ENDC}")
+            return False
         else:
             print(f"{software} {bcolors.OKGREEN}{bcolors.BOLD}installed{bcolors.ENDC}")
+            return True
 
 print(" * Trying to load specific modules needed by the pipeline.")
 
@@ -50,6 +54,33 @@ except ModuleNotFoundError:
     subprocess.check_output("pip3 install mdtable --user",shell=True,universal_newlines=True,stderr=subprocess.STDOUT)
 
 print("\n * Checking whether required software by the pipeline can be accessed\n")
+
+
+
+#cutadat 
+cutadapt=f"{str(Path.home())}/.local/bin/cutadapt"
+if not checkSoftware(cutadapt):
+    print("cutadapt not install locally. Attempting to install it")
+    subprocess.check_output("pip3 install cutadapt --user",shell=True,universal_newlines=True,stderr=subprocess.STDOUT)
+    if checkSoftware(cutadapt): 
+        print("cutadapt insatlled locally and ready to go!")
+    else:
+        print("There is still a problem. Check manually. Nothing more that I can do")
+else: 
+    print("cutadapt is properly installed and ready to go")
+    
+#multiqc
+multiqc=f"{str(Path.home())}/.local/bin/multiqc"
+if not checkSoftware(multiqc):
+    print("multiqc not install locally. Attempting to install it")
+    subprocess.check_output("pip3 install multiqc --user",shell=True,universal_newlines=True,stderr=subprocess.STDOUT)
+    if checkSoftware(cutadapt): 
+        print("multiqc insatlled locally and ready to go!")
+    else:
+        print("There is still a problem. Check manually. Nothing more that I can do")
+else: 
+    print("multiqc is properly installed and ready to go")
+
 
 
 #FastQC
@@ -97,7 +128,7 @@ bamCoverage="/srv/beegfs/scratch/shares/brauns_lab/bin/bamCoverage"
 checkSoftware(bamCoverage)
 
 #MACS2
-macs2="/home/users/l/lykoskou/Software/MACS2-2.2.7.1/bin/macs2"
+macs2="/srv/beegfs/scratch/shares/brauns_lab/Tools/MACS2-2.2.7.1/bin/macs2"
 checkSoftware(macs2)
 
 #bedClip

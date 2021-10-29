@@ -123,13 +123,14 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 FastQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/FastQC/fastqc
 
 #multiQC
-multiQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/multiqc/bin/multiqc
+#multiQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/multiqc/bin/multiqc
 
 #path to python 3.2
 python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
 
 #Path to cutadapt
-cutadapt,/srv/beegfs/scratch/shares/brauns_lab/Tools/cutadapt/bin/cutadapt
+#
+#cutadapt,/srv/beegfs/scratch/shares/brauns_lab/Tools/cutadapt/bin/cutadapt
 
 #Bedtools 
 bedtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/bedtools2/bin/bedtools
