@@ -288,7 +288,7 @@ def submitExtendReads(configFileDict,BED_FILES):
         input_file = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.extendedReads.bed".format(OUTPUT_DIR, input_file)
         
-        EXTENDBED_CMD = "source {BIN} {input} {extension} {genomeFileExtension} {output}".format(BIN=configFileDict['extendReadsScript'], extension=configFileDict['extend_reads'], input=bam, genomeFileExtension=configFileDict['genomeFileSize'], output=OUTPUT_FILE)
+        EXTENDBED_CMD = "source {BIN} {input} {extension} {genomeFileExtension} {output} {bedClip}".format(BIN=configFileDict['extendReadsScript'], extension=configFileDict['extend_reads'], input=bam, genomeFileExtension=configFileDict['genomeFileSize'], output=OUTPUT_FILE, bedClip = configFileDict['bedClip'])
         
         if '4' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = EXTENDBED_CMD, JID=configFileDict['BAM2BED_WAIT'])
