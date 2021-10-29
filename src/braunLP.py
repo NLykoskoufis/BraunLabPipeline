@@ -125,7 +125,7 @@ configFileDict['zipDirectoryScript'] = f"{pipeline_tools_path}/zipDirectory.py"
 # Python3 softwares. This assumes that the libraries were installed using pip3 install <software> --user 
 configFileDict['cutadapt'] = f"{str(Path.home())}/.local/bin/cutadapt"
 configFileDict['multiQC'] = f"{str(Path.home())}/.local/bin/multiqc"
-
+configFileDict['macs2'] = f"{str(Path.home())}/.local/bin/macs2"
 
 
 #get list of tasks
