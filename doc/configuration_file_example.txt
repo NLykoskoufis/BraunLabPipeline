@@ -14,16 +14,18 @@ contact_email,nikolaos.lykoskoufis@unige.ch
 #### NEEDED FILES PATH #####
 
 ### REFERENCE GENOMES ####
-#reference_genome, /srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/STAR_v2.7.5c/GRCh37_gencode.v19_50bp-readlength
-reference_genome,/srv/beegfs/scratch/groups/funpopgen/data/nikos/indexes/mm10/mm10
+#reference_genome,/srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.GRCm38.102_55bp-readLength
+#reference_genome,/srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.M10_55bp-readLength
+reference_genome,/srv/beegfs/scratch/shares/brauns_lab/data/indexes/Bowtie2/mm10/mm10
 
-genomeFileSize,/home/users/l/lykoskou/Software/bedtools2/genomes/mouse.mm10.genome
-##########################
+genomeFileSize,/srv/beegfs/scratch/shares/brauns_lab/Tools/bedtools2/genomes/mouse.mm10.genome##########################
 
 
 
 #### ANNOTATION FILES #####
-annotation, /srv/beegfs/scratch/groups/funpopgen/data/annotations/gencode.v19.annotation.nochr.gtf
+#annotation, /srv/beegfs/scratch/groups/funpopgen/data/annotations/gencode.v19.annotation.nochr.gtf
+annotation,/srv/beegfs/scratch/shares/brauns_lab/data/annotations/mus_musculus/Mus_musculus.GRCm38.102.modified.txt
+
 ###########################
 
 #### PAIRED-END or NOT ####
@@ -33,6 +35,9 @@ pairend,1
 
 # Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
 technology,ATACseq
+#technology,ChIPseq
+#technology,RNAseq
+
 
 #### READ TRIMMING OPTIONS ####
 #Example of how a cutadapt commands looks like 
@@ -51,7 +56,7 @@ mapper,bowtie2
 #### STAR OPTIONS ####
 STARoptions, --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMunmapped Within --outSAMattributes All
 
-STARreadLength, 50
+STARreadLength, 55
 ######################
 
 #### BOWTIE OPTIONS ####
@@ -122,15 +127,8 @@ slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 
 #FastQC 
 FastQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/FastQC/fastqc
 
-#multiQC
-#multiQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/multiqc/bin/multiqc
-
-#path to python 3.2
+#path to python3
 python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
-
-#Path to cutadapt
-#
-#cutadapt,/srv/beegfs/scratch/shares/brauns_lab/Tools/cutadapt/bin/cutadapt
 
 #Bedtools 
 bedtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/bedtools2/bin/bedtools
@@ -151,16 +149,10 @@ QTLtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/qtltools/bin/QTLtools
 Rscript,/opt/ebsofts/R/3.6.2-foss-2019b/bin/Rscript
 
 #PICARD-Tools
-picard,java -Xmx8g -jar /srv/beegfs/scratch/groups/funpopgen/bin/picard.jar
+picard,java -Xmx8g -jar /srv/beegfs/scratch/shares/brauns_lab/bin/picard.jar
 
 #WSBATCH
-wsbatch,/srv/beegfs/scratch/groups/funpopgen/bin/wsbatch
-
-#bamCoverage, 
-bamCoverage,/srv/beegfs/scratch/shares/brauns_lab/bin/bamCoverage
-
-#MACS2
-macs2,/home/users/l/lykoskou/Software/MACS2-2.2.7.1/bin/macs2
+wsbatch,/srv/beegfs/scratch/shares/brauns_lab/bin/wsbatch
 
 #bedClip
 bedClip,/srv/beegfs/scratch/shares/brauns_lab/bin/bedClip

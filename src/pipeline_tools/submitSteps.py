@@ -200,8 +200,7 @@ def submitFilteringBAM(configFileDict, BAM_FILES):
     return FILTER_BAM_WAIT
     
 
-
-        
+ 
 def submitBAM2BW(configFileDict, BAM_FILES):
     """[Submits jobs for removal of PCR duplicated reads]
 
