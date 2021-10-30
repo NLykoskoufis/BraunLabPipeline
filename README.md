@@ -6,13 +6,14 @@
 
 # Table of contents
 1. [General information](#introduction)
-2. [Steps of the pipeline](#steps)
+   1. [Requirements](#requirements)
+3. [Steps of the pipeline](#steps)
    1. [Task list](#taskList)
    2. [Command line](#commandLine)
-3. [Output](#output)
-4. [Configuration file](#configFile)
-5. [Prepare your data](#name_convention)
-6. [Running the pipeline](#howToRun)
+4. [Output](#output)
+5. [Configuration file](#configFile)
+6. [Prepare your data](#name_convention)
+7. [Running the pipeline](#howToRun)
 
 
 ## General information <a name="introduction"></a>
@@ -20,6 +21,24 @@
 This document contains all information to access and run the pipeline used in the Braun lab for processing ChIP-seq, ATAC-seq and RNA-seq data. The goal of this pipeline is to provide an automated solution to generate sequencing files (fastq), mapping (bam), peak and gene quantification. 
 
 *Please note that this pipeline has been set to run on UNIGE cluster (baobab) and modifications may be required to run it on another cluster.*
+
+### Requirements
+
+The pipeline requires several python3 libraries to be pre-installed. If you haven't installed them, you can run the following commands.
+
+pip3 install rich --user 
+
+pip3 install markdown --user 
+
+pip3 intall mdtable --user 
+
+pip3 install macs2 --user 
+
+pip3 install deeptools --user 
+
+pip3 install cutadapt --user 
+
+You will also need to install ATACseqQC, a R module required for QCing ATACseq data.
 
 #### What is inside the pipeline 
 
