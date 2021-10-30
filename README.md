@@ -28,7 +28,7 @@ The pipeline starts with sequence files (fastq.gz) and uses cutadapt for trimmin
 You can run all tasks into one go or run specific tasks depending on your needs. 
 
 
-####### Contact 
+###### Contact 
 
 If you need more information: 
 Nikolaos Lykoskoufis: nikolaos.lykoskoufis@unige.ch 
