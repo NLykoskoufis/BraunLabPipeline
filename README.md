@@ -29,7 +29,7 @@ The pipeline requires several python3 libraries to be pre-installed. If you have
 ```{bash}
 pip3 install rich --user 
 pip3 install markdown --user 
-pip3 intall mdtable --user 
+pip3 install mdtable --user 
 pip3 install macs2 --user 
 pip3 install deeptools --user 
 pip3 install cutadapt --user 
