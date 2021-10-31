@@ -22,6 +22,13 @@ This document contains all information to access and run the pipeline used in th
 
 *Please note that this pipeline has been set to run on UNIGE cluster (baobab) and modifications may be required to run it on another cluster.*
 
+#### What is inside the pipeline 
+
+The pipeline starts with sequence files (fastq.gz) and uses cutadapt for trimming reads if necessary. For mapping, it uses either bowtie2 (ChIP-seq / ATAC-seq) or STAR (RNA-seq). Picard-Tools is used for marking duplicated reads. SamTools is used for sorting, indexing and filtering reads. For peak calling we use MACS2 and gene quantification is performed using featureCounts.
+
+You can run all tasks into one go or run specific tasks depending on your needs. 
+
+
 ### Requirements
 
 The pipeline requires several python3 libraries to be pre-installed. If you haven't installed them, you can run the following commands.
@@ -35,13 +42,14 @@ pip3 install deeptools --user
 pip3 install cutadapt --user 
 ```
 You will also need to install ATACseqQC, a R module required for QCing ATACseq data.
+Launch R and run the following commands
 
-#### What is inside the pipeline 
+```{R}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 
-The pipeline starts with sequence files (fastq.gz) and uses cutadapt for trimming reads if necessary. For mapping, it uses either bowtie2 (ChIP-seq / ATAC-seq) or STAR (RNA-seq). Picard-Tools is used for marking duplicated reads. SamTools is used for sorting, indexing and filtering reads. For peak calling we use MACS2 and gene quantification is performed using featureCounts.
-
-You can run all tasks into one go or run specific tasks depending on your needs. 
-
+BiocManager::install("ATACseqQC")
+```
 
 ###### Contact 
 
