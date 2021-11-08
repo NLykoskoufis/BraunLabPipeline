@@ -121,6 +121,8 @@ configFileDict['ATACseqQC'] = f"{scripts_path}/fragmentSizeDist.R"
 configFileDict['ATACbamQC'] = f"{scripts_path}/atacQC_stats.R"
 configFileDict['bam2bed_script'] = f"{scripts_path}/bam2bed.sh"
 configFileDict['zipDirectoryScript'] = f"{pipeline_tools_path}/zipDirectory.py"
+configFileDict['combineCountScript'] = f"{scripts_path}/combinePeakCounts.py"
+configFileDict['combineQuanScript'] = f"{scripts_path}/featureCountsTObed.py"
 
 # Python3 softwares. This assumes that the libraries were installed using pip3 install <software> --user 
 configFileDict['cutadapt'] = f"{str(Path.home())}/.local/bin/cutadapt"

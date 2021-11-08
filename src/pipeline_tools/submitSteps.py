@@ -5,6 +5,7 @@ import sys
 import glob
 import os
 from pipeline_tools.slurmTools import catchJID
+from scripts.featureCountsTObed import combineCounts
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -390,8 +391,10 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES):
     for bed in EXTENDED_BED_FILES: 
         outputFile = OUTPUT_DIR + "/" + os.path.basename(bed).replace("extendedReads.bed", "count")
         peak_cmd.append("{bedtools} intersect -a {outputDir}/merged_peaks_ALLsamples.bed -b {bed} -c > {outputFile}".format(bedtools = configFileDict['bedtools'], outputDir = OUTPUT_DIR, bed = bed, outputFile=outputFile))
-        
-    CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd)
+    
+    COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.count --outputFile {input_dir}/AllSamples_chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
+    
+    CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd) + " && " + COMBINECOUNTS2BED_CMD
     
     wait_condition = ""
      
@@ -576,12 +579,21 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES):
         if '2' in configFileDict['task_list'] : 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'])
         out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
         QUANT_JID_LIST.append(catchJID(out))
 
         configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
-        
+       
+    ### SUBMIT COMBINE QUANTIFICATIONS TO MULTI-SAMPLE BED FILE
+    COMBINEQUAN = "python3 {combineQuan} --file-list {outputDir}/*.txt --outputFile Allsamples.chrALL.raw.gene.count.bed --gtf-file {gtfFile}".format(combineQuan = configFileDict['combineQuanScript'], outputDir = OUTPUT_DIR, gtfFile = configFileDict['annotation'])
+    
+    slurm_cmd = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = ",".join(QUANT_JID_LIST), cmd = COMBINEQUAN) 
+    
+    out = subprocess.check_output(slurm_cmd, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+    
+    QUANT_JID_LIST.append(catchJID(out))
     QUANT_WAIT = ",".join(QUANT_JID_LIST)
+        
     del QUANT_JID_LIST
     return QUANT_WAIT

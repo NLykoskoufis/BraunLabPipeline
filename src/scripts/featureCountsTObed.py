@@ -37,7 +37,7 @@ class Utils:
         except:
             f.close()
             return open(filename,"rt")
-            
+
 def readAnnotationGTF(fgtf):
     dico = defaultdict(dict)
     f = Utils.myopen(fgtf)
@@ -145,7 +145,7 @@ parser.add_argument("-out", '--outputFile', dest='outputFile', required=True, ty
 ####################
 
 #Get command line args
-args = parser.parse_args()
 
 if __name__ == "__main__":
+    args = parser.parse_args()
     combineCounts(args.ftxts, args.fgtf, args.outputFile)
