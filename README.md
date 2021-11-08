@@ -6,13 +6,14 @@
 
 # Table of contents
 1. [General information](#introduction)
-2. [Steps of the pipeline](#steps)
+   1. [Requirements](#requirements)
+3. [Steps of the pipeline](#steps)
    1. [Task list](#taskList)
    2. [Command line](#commandLine)
-3. [Output](#output)
-4. [Configuration file](#configFile)
-5. [Prepare your data](#name_convention)
-6. [Running the pipeline](#howToRun)
+4. [Output](#output)
+5. [Configuration file](#configFile)
+6. [Prepare your data](#name_convention)
+7. [Running the pipeline](#howToRun)
 
 
 ## General information <a name="introduction"></a>
@@ -28,7 +29,29 @@ The pipeline starts with sequence files (fastq.gz) and uses cutadapt for trimmin
 You can run all tasks into one go or run specific tasks depending on your needs. 
 
 
-####### Contact 
+### Requirements
+
+The pipeline requires several python3 libraries to be pre-installed. If you haven't installed them, you can run the following commands.
+
+```{bash}
+pip3 install rich --user 
+pip3 install markdown --user 
+pip3 install mdtable --user 
+pip3 install macs2 --user 
+pip3 install deeptools --user 
+pip3 install cutadapt --user 
+```
+You will also need to install ATACseqQC, a R module required for QCing ATACseq data.
+Launch R and run the following commands
+
+```{R}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("ATACseqQC")
+```
+
+###### Contact 
 
 If you need more information: 
 Nikolaos Lykoskoufis: nikolaos.lykoskoufis@unige.ch 
