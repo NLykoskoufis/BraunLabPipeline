@@ -468,14 +468,8 @@ def submitBamQC(configFileDict, BAM_FILES):
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
         
-        if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
-            output_file = f"{OUTPUT_DIR}/{input_file}_bamQC_stats.csv"
-            BAMQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['ATACbamQC'],input = bam,output_dir = output_file) 
-        elif configFileDict['technology'] == "RNAseq":
-            outputFile = f"{OUTPUT_DIR}/{input_file}_bamStats"
-            BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}"
-        else: 
-            vrb.error("You need to specify a technology ATACseq, ChIPseq or RNAseq.")
+        output_file = f"{OUTPUT_DIR}/{input_file}_bamQC_stats.csv"
+        BAMQC_CMD = "Rscript {BIN} {input} {output_dir}".format(BIN=configFileDict['ATACbamQC'],input = bam,output_dir = output_file) 
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
@@ -492,6 +486,29 @@ def submitBamQC(configFileDict, BAM_FILES):
     del BAMQC_JID_LIST
     return BAMQC_WAIT
 
+def submitSamtoolsBamQC(configFileDict, BAM_FILES):
+    BAMQC_JID_LIST = []
+    OUTPUT_DIR = configFileDict['bamQC_dir']
+    for bam in BAM_FILES:
+        input_file = os.path.basename(bam).split(".")[0]
+        
+        outputFile = f"{OUTPUT_DIR}/{input_file}_bamStats"
+        BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}"
+        
+        if '4' in configFileDict['task_list']:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+
+        else:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD)
+
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BAMQC_JID_LIST.append(catchJID(out))
+
+        configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
+        
+    BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
+    del BAMQC_JID_LIST
+    return BAMQC_WAIT 
 
 def submitFastQC(configFileDict):
     FASTQC_JID_LIST = []

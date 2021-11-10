@@ -704,14 +704,28 @@ with Progress() as progress:
             
             if '4' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
-                BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
-                configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
+                if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
+                    BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
+                    BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + "," + BAMQC_WAIT2
+                elif configFileDict['technology'] = "RNAseq":
+                    BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
+                else:
+                    vrb.error("You need to specify a proper technology.")
             else: 
                 BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 
-                BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
-                configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
-            
+                if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
+                    BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
+                    BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + ',' + BAMQC_WAIT2
+                elif configFileDict['technology'] = "RNAseq":
+                    BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
+                else:
+                    vrb.error("You need to specify a proper technology.")
+                
             task_dico['4.2'] = "BAMQC_WAIT"
 
             task_log_dico['4.2'] = 'bamQC_log_files'
