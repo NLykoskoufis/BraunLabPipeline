@@ -708,7 +708,7 @@ with Progress() as progress:
                     BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
                     BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + "," + BAMQC_WAIT2
-                elif configFileDict['technology'] = "RNAseq":
+                elif configFileDict['technology'] == "RNAseq":
                     BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
                 else:
@@ -720,7 +720,7 @@ with Progress() as progress:
                     BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
                     BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + ',' + BAMQC_WAIT2
-                elif configFileDict['technology'] = "RNAseq":
+                elif configFileDict['technology'] == "RNAseq":
                     BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
                 else:
