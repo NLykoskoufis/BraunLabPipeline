@@ -493,7 +493,7 @@ def submitSamtoolsBamQC(configFileDict, BAM_FILES):
         input_file = os.path.basename(bam).split(".")[0]
         
         outputFile = f"{OUTPUT_DIR}/{input_file}_bamStats"
-        BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}"
+        BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}".format(samtools = configFileDict['samtools'], bam = bam, outputFile = outputFile, plotBam = configFileDict['plotBam'], input_file = input_file)
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
