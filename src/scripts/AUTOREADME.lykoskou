@@ -12,3 +12,13 @@ lh
 ../../../../../Tools/braunATACpipeline/src/scripts
 #[2021-09-16 04:47:05 PM]
 lh
+#[2021-11-11 08:10:36 AM]
+cd src/scripts
+#[2021-11-11 08:10:38 AM]
+lh
+#[2021-11-11 08:18:18 AM]
+vim createSamtoolsStatsTable.py
+#[2021-11-11 08:18:24 AM]
+vim createSamtoolsStatsTable.py
+#[2021-11-11 08:18:40 AM]
+vim createSamtoolsStatsTable.py
