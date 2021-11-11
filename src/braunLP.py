@@ -123,6 +123,7 @@ configFileDict['bam2bed_script'] = f"{scripts_path}/bam2bed.sh"
 configFileDict['zipDirectoryScript'] = f"{pipeline_tools_path}/zipDirectory.py"
 configFileDict['combineCountScript'] = f"{scripts_path}/combinePeakCounts.py"
 configFileDict['combineQuanScript'] = f"{scripts_path}/featureCountsTObed.py"
+configFileDict['combineBamStatScript'] = f"{scripts_path}/createSamtoolsStatsTable.py"
 
 # Python3 softwares. This assumes that the libraries were installed using pip3 install <software> --user 
 configFileDict['cutadapt'] = f"{str(Path.home())}/.local/bin/cutadapt"
@@ -713,7 +714,8 @@ with Progress() as progress:
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
                 else:
                     vrb.error("You need to specify a proper technology.")
-            else: 
+            else:
+                
                 BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 
                 if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":

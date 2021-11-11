@@ -53,16 +53,16 @@ def readStats(fstats):
     dico = defaultdict(dict) 
     for file in fstats: 
         print(f"  * Reading [{file}]")
-        sample = os.path.basename(file).split(".")[0]
+        sample = os.path.basename(file).replace("_bamStats","")
         f = Utils.myopen(file)
         for line in (line.rstrip().split("\t") for line in f):
             if line[0] == "SN":
-                dico[sample][line[1].replace(" ","_").replace(":","")] = line[2]
+                dico[sample][line[1].replace(":","")] = line[2]
             elif line[0] == "FFQ": 
                 break
             else:
                 continue
-        return dico 
+    return dico 
 
 
 def dicoTOcsv(dico, fcsv):

@@ -490,10 +490,26 @@ def submitSamtoolsBamQC(configFileDict, BAM_FILES):
     BAMQC_JID_LIST = []
     OUTPUT_DIR = configFileDict['bamQC_dir']
     for bam in BAM_FILES:
-        input_file = os.path.basename(bam).split(".")[0]
+        sampleID = os.path.basename(bam).split(".")[0]
         
-        outputFile = f"{OUTPUT_DIR}/{input_file}_bamStats"
-        BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}".format(samtools = configFileDict['samtools'], bam = bam, outputFile = outputFile, plotBam = configFileDict['plotBam'], input_file = input_file)
+        
+        if '4' in configFileDict['task_list']:
+            ### CHECK THAT FILES ORIGINATE FROM BAM MARKED_BAM OR FILTERED_BAM
+            bamDir = bam.split("/")[-2]
+            if bamDir == "bam":
+                prefix = f"sortedBam_{sampleID}"
+            elif bamDir == "marked_bam":
+                prefix = f"markedBam_{sampleID}"
+            elif bamDir == "filtered_bam":
+                prefix = f"filteredBam_{sampleID}"
+            else:
+                print("The bam directory is neither bam/marked_bam/filtered_bam. There is something wrong")
+                sys.exit(-1)
+        else:
+            prefix = sampleID
+        
+        outputFile = f"{OUTPUT_DIR}/{prefix}_bamStats"
+        BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}".format(samtools = configFileDict['samtools'], bam = bam, outputFile = outputFile, plotBam = configFileDict['plotBam'], input_file = prefix)
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
@@ -505,8 +521,15 @@ def submitSamtoolsBamQC(configFileDict, BAM_FILES):
         BAMQC_JID_LIST.append(catchJID(out))
 
         configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
-        
+    
+      
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
+    ## COMBINE ALL bamStats files together 
+    COMBINE_CMD = "python3 {bamStatCombineScript} -f {outputDIR}/*_bamStats -out AllSamples.bamStats.csv".format(bamStatCombineScript = configFileDict['combineBamStatScript'], outputDIR = OUTPUT_DIR)
+    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = COMBINE_CMD, JID=BAMQC_WAIT)
+    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+    
+    BAMQC_WAIT = BAMQC_WAIT + "," + catchJID(out)
     del BAMQC_JID_LIST
     return BAMQC_WAIT 
 
