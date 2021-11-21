@@ -485,7 +485,7 @@ def submitBamQC(configFileDict, BAM_FILES):
         
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
     combineCSV_cmd = "awk 'NR==1 || FNR>1 {print}' *_bamQC_stats.csv > Allsamples_bamQC_stats.csv"
-    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = combineCSV_cmd, JID=configFileDict['BAMQC_WAIT'])
+    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = combineCSV_cmd, JID=BAMQC_WAIT)
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
     
     BAMQC_WAIT += "," + catchJID(out)
