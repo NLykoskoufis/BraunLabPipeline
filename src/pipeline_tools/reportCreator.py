@@ -1,151 +1,101 @@
 #!/usr/bin/env python3 
 
-import subprocess
-import sys 
-import os 
-import time 
-from collections import defaultdict
-import glob
-import json 
-
-pipeline_path = os.path.abspath(sys.path[0]).replace("pipeline_tools","")
-pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
-utils_tools_path = os.path.abspath(pipeline_path+"/utils")
-sys.path.append(pipeline_tools_path)
-sys.path.append(utils_tools_path)
-sys.path.append(pipeline_path)
+from os import stat
+import pandas as pd 
 
 
-from verbose import verbose as vrb
-from jobCheck import * 
-from Logger import Log
-from datetime import datetime
-
-#1. Combine bamQC stats and copy to report directory
-#2. Copy plots to report directory
-#3. Get dictionary with all steps and exit codes. 
-#4. Start report.
-
-
-
-
-######## COMBINE bamQC and copy in report directory ##########
-
-def combineBamQC(configFileDict, task_dico):
-    vrb.bullet("Merge all bamQC statistics into single csv file.")
-    if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
-        input_dir = configFileDict['bamQC_dir']
-        output_dir = configFileDict['report_dir']
-        output_log = configFileDict['report_dir'] + "/log"
-        sampleID = configFileDict['sample_prefix']
-        samples_csvs = [input_dir + "/" + i +"_bamQC_stats.csv" for i in sampleID]
+class HtmlReport(object):
+    
+    def __init__(self, fout):
+        self.fout = fout 
         
-        merge_cmd = "awk 'NR==1 || FNR>1' {sample} > {input_dir}/Allsamples_bamQC_stats.csv && cp {input_dir}/Allsamples_bamQC_stats.csv {output_dir}/Allsamples_bamQC_stats.csv ".format(input_dir=input_dir, output_dir = output_dir,sample=" ".join(samples_csvs))
-        return merge_cmd 
-
-
-def copyPlot(configFileDict, task_dico):
-    vrb.bullet("Copy all plots to report directory")
-    if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
-        input_dir = configFileDict['bamQC_dir']
-        output_dir = configFileDict['report_dir']
-        output_log = configFileDict['report_dir'] + "/log"
-        sampleID = configFileDict['sample_prefix']
-        samples_plots = [input_dir + "/" + i +"_fragSizeDistPlot.pdf" for i in sampleID]
-    elif configFileDict['technology'] == "RNAseq":
-        print("TBD")
-        
-    cp_plots = "cp {samples_plots} {output_dir}/".format(input_dir = input_dir, output_dir=output_dir,samples_plots=" ".join(samples_plots))
-    return cp_plots 
-
-
-def getAllExitCodesPerTask(configFileDict,task_dico):
-    dico = defaultdict(dict)
-    for task in configFileDict['task_list']:
-        vrb.bullet(task)
-        if task == "report":
-            continue
+    @staticmethod
+    def initiate():
+        return "<html>\n\n<head>\n  <title>My report!</title>\n  <style>\n    body {\n      background: rgb(58, 58, 58);\n      color: black;\n      font-family: Helvetica Neue, Helvetica, Arial, sans-serif;\n      margin: 0;\n      padding: 0;\n    }\n\n    header {\n      background: #333333;\n      color: white;\n      padding: 50px;\n      text-align: center;\n      height: 100px;\n\n    }\n\n    section {\n      background: white;\n      color: black;\n      padding: 20px;\n\n    }\n\n    footer {\n      font-size: 12px;\n      font-weight: 00px;\n      background: #333333;\n      padding: 10px 20px;\n      color: white;\n    }\n\n    .dataPath {\n      background: #F3F3F3;\n      color: #333333;\n      padding: 5px;\n      border-radius: 5px;\n      display: inline;\n      flex-direction: row;\n      margin: auto;\n    }\n\n    .logList {\n      overflow: auto;\n      line-height: 2;\n      background-color: #F3F3F3;\n      padding-top: 1px;\n      padding-bottom: 25px;\n      width: 100%;\n      height: 100px;\n      position: relative;\n      border-radius: 10px;\n    }\n\n    ul {\n      white-space: nowrap;\n      list-style-type: none;\n      margin: 0;\n      padding: 0;\n    }\n\n    #bamQC {\n      font-size: 13;\n      border-collapse: collapse;\n      margin-left: auto;\n      margin-right: auto;\n    }\n\n    #bamQC td,\n    #bamQC th {\n      border: 1px solid #ddd;\n      padding: 8px 16px;\n      text-align: center;\n      color: black;\n    }\n\n    #bamQC tr:nth-child(even) {\n      background-color: #f2f2f2;\n    }\n\n    #bamQC tr:hover {\n      background-color: #ddd;\n    }\n\n    #bamQC th {\n      padding-top: 12px;\n      padding-bottom: 12px;\n      text-align: center;\n      background-color: #C7DFED;\n      color: black;\n    }\n\n    .myDF {\n      overflow: auto;\n      height: 500px;\n      display: inline-block;\n    }\n\n    .dataframe {\n      overflow: auto;\n      height: 500px;\n      display: inline-block;\n      width: 100%;\n    }\n\n    .myDF thead th {\n      position: sticky;\n      top: 0;\n      z-index: 1;\n    }\n\n    .dataframe thead th {\n      position: sticky;\n      top: 0;\n      z-index: 1;\n    }\n\n    .dfStandards {\n      overflow: auto;\n      display: table-row;\n      width: auto;\n      bottom: 20px;\n    }\n\n    #dfS {\n      font-size: 13;\n      border-collapse: collapse;\n      margin-left: auto;\n      margin-right: auto;\n      text-align: center;\n    }\n\n    #dfS thead {\n      padding-top: 12px;\n      padding-bottom: 12px;\n      text-align: center;\n      background-color: #6699CC;\n      color: black;\n    }\n\n    #dfS td,\n    #dfS th {\n      border: 1px solid black;\n      padding: 8px 16px;\n      text-align: center;\n      color: black;\n    }\n\n\n\n\n\n    .button {\n      display: inline-block;\n      padding: 0.46em 1.6em;\n      border: 0.1em solid #000000;\n      margin: 0 0.2em 0.2em 0;\n      border-radius: 0.12em;\n      box-sizing: border-box;\n      text-decoration: none;\n      font-weight: 500;\n      text-shadow: 0 0.04em 0.04em rgba(0, 0, 0, 0.35);\n      text-align: center;\n      background-color: #337AB8;\n      color: white;\n      text-decoration: none;\n      font-size: 16px;\n      cursor: pointer;\n      transition: all 0.15s;\n      float: right;\n    }\n\n    .button:hover {\n      text-shadow: 0 0 2em rgba(255, 255, 255, 1);\n      color: #FFFFFF;\n      border-color: #FFFFFF;\n    }\n\n    .button2 {\n      display: inline-block;\n      padding: 0.46em 1.6em;\n      border: 0.1em solid #000000;\n      margin: 0 0.2em 0.2em 0;\n      border-radius: 10px;\n      box-sizing: border-box;\n      text-decoration: none;\n      font-weight: 500;\n      text-shadow: 0 0.04em 0.04em rgba(0, 0, 0, 0.35);\n      text-align: center;\n      background-color: #337AB8;\n      color: white;\n      text-decoration: none;\n      font-size: 16px;\n      cursor: pointer;\n      transition: all 0.15s;\n\n    }\n\n    .button2:hover {\n      text-shadow: 0 0 2em rgba(255, 255, 255, 1);\n      color: #FFFFFF;\n      border-color: #FFFFFF;\n    }\n\n    @media all and (max-width:30em) {\n      .button {\n        display: block;\n        margin: 0.4em auto;\n      }\n\n      .button2 {\n        display: block;\n        margin: 0.4em auto;\n      }\n    }\n\n    .mainHeader {\n      font-size: 40px;\n    }\n  </style>\n</head>\n\n"
+    
+    @staticmethod
+    def text(txt, color=None):
+        if color == None: 
+            return f"<p>{txt}</p>\n"
         else:
-            vrb.bullet("Checking Exit Codes of task: "+task)
-            #print(task_dico[task])
-            logFiles = configFileDict[task_dico[task]]
-            #print(logFiles)
-            for file in logFiles:
-                print(file)
-                dico[task][file] = check_exitCodes(file)
-    return dico 
-
-def readDictFromFile(dico):
-    f = open(dico)
+            return f"<p style=\"color:{color}\">{txt}</p>\n"
     
-    dict = json.load(f)
-    return dict
+    @staticmethod
+    def h1(txt):
+        return f"<h1>{txt}</h1>\n"
     
-
-def main(configFileDict_file, task_dico_file, reportName):
-    configFileDict = readDictFromFile(configFileDict_file)
-    task_dico = readDictFromFile(task_dico_file)
-    #print(configFileDict)
+    @staticmethod
+    def h2(txt):
+        return f"<h2>{txt}</h2>\n"
     
-    TASKS = {'1':"Trimming", "1.1":"FastQC", "2":"Mapping",'3':"Marking Duplicates",'4':"Filtering&Indexing", '4.1':"QC of ATACseq", "4.2":"BamQC", "5":"Bam 2 BigWig", '6':"Bam 2 BED","7":"extending reads","8":"Peak Calling", "8.1":"Peak to Counts"}
+    @staticmethod
+    def h3(txt):
+        return f"<h3>{txt}</h3>\n"
+    
+    @staticmethod
+    def link(text, path):
+        return f"<a class=\"button2\" href=\"{path}\">{text}</a>"
     
     
-    #1 combine bamQC data
-    if "4.2" in configFileDict['task_list']: 
-        COMBINE_CMD = subprocess.Popen(combineBamQC(configFileDict,task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    @staticmethod
+    def csv2html(fcsv, classes=None, table_id=None, text_align=None):
+        df = pd.read_csv(fcsv)
+        return df.to_html(classes=classes, table_id=table_id, justify=text_align)
     
-    #2 copy plots to report directory 
-
-    if configFileDict['technology'] == "ATACseq" and "4.1" in configFileDict['task_list']:
-        COPY_CMD = subprocess.Popen(copyPlot(configFileDict, task_dico),shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    @staticmethod
+    def startBody():
+        return "<body>"
     
-    #3 Get all exit Codes per task 
+    @staticmethod
+    def endReport():
+        return "</body>\n</html>\n"
     
-    dico = getAllExitCodesPerTask(configFileDict,task_dico)
-    print(dico)
-    # Start creation of report
-    date = datetime.now().strftime("%d/%m/%Y")
-
-    log = Log(reportName) # Initialize logger
-    log.ctitle("Testing pipeline report", "Nikolaos Lykoskoufis",date)
-    # Adding directory where all results will be written. 
-    if configFileDict.get("output_dir") == None:
-        log.bullet("Output directory: "+ configFileDict['raw_dir'])
-    else: 
-        log.bullet("Output directory: "+ configFileDict['output_dir'])
+    @staticmethod
+    def header(date, path):
+        return f"<header>\n\n<a href=\"https://github.com/NLykoskoufis/BraunLabPipeline\" class=\"button\" target=\"_blank\">Github</a>\n<a href=\"https://github.com/NLykoskoufis/BraunLabPipeline/blob/main/README.md\" class=\"button\" target=\"_blank\">Documentation</a>\n<img src=\"reportCreator.png\" style=\"float:left\" height=\"130%\">\n</header>\n\n<section>\n  \n<h1>General information</h1>\n<p>Report generated on 2021-11-17, 10:30 based on data in:</p>\n<div class=\"dataPath\">/srv/beegfs/scratch/shares/brauns_lab/data/nikos/mouseBrainMetabolism/data_raw/ATACseq2</div></section>"
     
-    print(configFileDict['task_list'])
-    for task in configFileDict['task_list']:
+    @staticmethod
+    def addPathWithBackground(path):
+        return f"<div class=\"dataPath\">{path}</div>\n"
+    
+    @staticmethod
+    def addImage(path, title):
+        return f"<embed src=\"{path}\" alt=\"{title}\" width=\"800px\" height=\"800px\">\n"
         
-        if task == "report":
-            continue
-        else:
-            log.title(TASKS[task])
-            logFiles = dico[task]
-            code_set = set()
-            FAILED = []
-            for l,exitCode in logFiles.items():
-                print(l,"\t", exitCode)
-                val = "Successfully completed" if exitCode else "Failed"
-                log.bullet(l + ": " + val)
+        
+    @staticmethod
+    def footer():
+        return "<footer>\n <p>Created by Nikolaos Lykoskoufis and Simon Braun <span>&copy</span> 2021</p> \n <p>Contact: <a style=\"color:inherit\" href=\"mailto:nikolaos.lykoskoufis@unige.ch\">nikolaos.lykoskoufis@unige.ch</a>, <a style=\"color:inherit\" href=\"mailto:simon.braun@unige.ch\">Simon.Braun@unige.ch</a></p>\n</footer>\n"
     
-    if configFileDict['technology'] == "ATACseq" and "4.1" in configFileDict['task_list']:
-        log.title("ATAC seq QC plots")
-        plots = glob.glob(configFileDict['report_dir']+"/*.pdf")
-        if len(plots) == 0: 
-            print("No plots to add to report")
-        else: 
-            for plot in plots:
-                plot_title = plot.replace(".pdf","")
-                log.image(plot_title, os.path.basename(plot))         
+
+    def writeToFile(self,htmlCode):
+        with open(self.fout, "w") as g: 
+            g.write(htmlCode)
     
+    class SectionCreator():
+        @staticmethod
+        def initiateSection():
+            return "<section>\n"
+        
+        @staticmethod
+        def terminateSection():
+            return "</section>\n"  
+    
+    class listCreator():
+        
+        @staticmethod
+        def initiateList(classes):
+            return f"<div class=\"{classes}\">\n<nav>\n<ul>\n"
+        
+        @staticmethod
+        def terminate():
+            return "</ul>\n</nav>\n</div>"
             
-    # wrapping up and converting markdown to html 
-    log.md2html(reportName.replace(".md", ".html"))    
-
-
-if __name__ == "__main__":
-    main(*sys.argv[1:])
+        @staticmethod
+        def addElement(txt, color=None):
+            if color == None: 
+                return f"<li>{txt}</li>"
+            else:
+                return f"<li style=\"color:{color}\">{txt}</li>"
+        
     
-    
-

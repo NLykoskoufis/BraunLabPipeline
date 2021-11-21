@@ -454,8 +454,9 @@ def submitATACseqQC(configFileDict, BAM_FILES):
 
         configFileDict['atacQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
         
-        
+    
     ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
+    
     del ATACQC_JID_LIST
     return ATACQC_WAIT
 
@@ -483,6 +484,11 @@ def submitBamQC(configFileDict, BAM_FILES):
         configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
         
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
+    combineCSV_cmd = "awk 'NR==1 || FNR>1 {print}' *_bamQC_stats.csv > Allsamples_bamQC_stats.csv"
+    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = combineCSV_cmd, JID=configFileDict['BAMQC_WAIT'])
+    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+    
+    BAMQC_WAIT += "," + catchJID(out)
     del BAMQC_JID_LIST
     return BAMQC_WAIT
 

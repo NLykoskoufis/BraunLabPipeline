@@ -955,12 +955,12 @@ with Progress() as progress:
                 
                 zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir = reportDir, raw_dir = outputDir)
                 
-                CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = reportDir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd)
+                CMD = "{python3} {report_script} {json1} {json2} {output_dir}/{uid}.pipelineRunReport.html; {cp_multiqc}; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = reportDir, cp_multiqc = cp_multiqc, zipDir_cmd = zipDir_cmd, uid=configFileDict['uid'])
             else:
                     
                 zipDir_cmd = "python3 {zipScript} {reportDir} {raw_dir}/pipeline_report.zip".format(zipScript = configFileDict['zipDirectoryScript'], reportDir =reportDir, raw_dir = outputDir)
                 
-                CMD = "{python3} {report_script} {json1} {json2} {output_dir}/test_report.md; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = reportDir, zipDir_cmd = zipDir_cmd)
+                CMD = "{python3} {report_script} {json1} {json2} {output_dir}/{uid}.pipelineRunReport.html; {zipDir_cmd}; rm {json1} {json2}".format(python3 = configFileDict['python'], report_script = configFileDict['report'], json1 = json1, json2 = json2,output_dir = reportDir, zipDir_cmd = zipDir_cmd, uid=configFileDict['uid'])
             
             # Create .sh file to run the command. 
             
