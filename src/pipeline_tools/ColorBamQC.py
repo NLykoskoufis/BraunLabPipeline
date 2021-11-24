@@ -84,14 +84,15 @@ def csvtoHTML(file):
         html += "<tr>\n"
         for j in range(len(lst[i])):
             if j == 0: 
+                print(lst[i][j])
                 html += f"<td>{lst[i][j]}</td>\n"
-            if j == 4: 
+            elif j == 5: 
                 color = NRF("ATACseq",lst[i][j])
                 html += f"<td style=\"background-color:{color}; font-weight:bold\">{lst[i][j]}</td>\n"
-            elif j == 5: 
+            elif j == 6: 
                 color = PBC1("ATACseq",lst[i][j])
                 html += f"<td style=\"background-color:{color}; font-weight:bold\">{lst[i][j]}</td>\n"
-            elif j == 6: 
+            elif j == 7: 
                 color = PBC2("ATACseq",lst[i][j])
                 html += f"<td style=\"background-color:{color}; font-weight:bold\">{lst[i][j]}</td>\n"
             else: 
@@ -101,4 +102,5 @@ def csvtoHTML(file):
     html += "</tbody>\n</table>"
 
     return html
+
 

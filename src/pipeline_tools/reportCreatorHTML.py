@@ -97,7 +97,7 @@ def main(configurationDictionary, task_dictionary, outputHTMLfile):
     html = "" 
     x = HtmlReport(outputHTMLfile)
     html += x.initiate()
-
+    os.system(f"cp {configFileDict['pipeline_path']}/report/ReportCreator.png {configFileDict['report_dir']}")
     html += x.header(f"{now.strftime('%Y-%m-%d %H:%M')}", configFileDict['raw_dir'])
 
 
@@ -267,7 +267,7 @@ def main(configurationDictionary, task_dictionary, outputHTMLfile):
         html += x.h1("Quality control of BAM files")
         if '4.2' in configFileDict['task_list']:
             html += x.h2("Samtools BAM statistics")
-            html += x.csv2html(f"{configFileDict['bamQC']}/AllSamples_samtoolsStats.csv",table_id="bamQC", text_align="center")
+            html += x.csv2html(f"{configFileDict['bamQC_dir']}/AllSamples_samtoolsStats.csv",table_id="bamQC", text_align="center")
             if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
                 if configFileDict['technology'] == "ATACseq":
                     html += x.h2("ATACseq bam QC")
@@ -284,7 +284,7 @@ def main(configurationDictionary, task_dictionary, outputHTMLfile):
                 
                     
                 html += x.SectionCreator().initiateSection()
-                html += csvtoHTML(f"{configFileDict['bamQC']}/Allsamples_bamQC_stats.csv")
+                html += csvtoHTML(f"{configFileDict['bamQC_dir']}/Allsamples_bamQC_stats.csv")
                 html += x.SectionCreator().terminateSection()
         html += x.SectionCreator().terminateSection()
 

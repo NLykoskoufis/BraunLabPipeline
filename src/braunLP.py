@@ -111,10 +111,10 @@ else:
 #================================
 """
 
-
+configFileDict['pipeline_path'] = pipeline_path
 configFileDict['mail_script'] = f"{pipeline_tools_path}/sendEmail.py"
 configFileDict['jobCheck'] = f"{pipeline_tools_path}/jobCheck.py"
-configFileDict['report'] = f"{pipeline_tools_path}/reportCreator.py"
+configFileDict['report'] = f"{pipeline_tools_path}/reportCreatorHTML.py"
 configFileDict['junctionMerge_script'] = f"{scripts_path}/merge_junctions.pl"
 configFileDict['extendReadsScript'] = f"{scripts_path}/extendBedReads.sh"
 configFileDict['ATACseqQC'] = f"{scripts_path}/fragmentSizeDist.R"
@@ -144,7 +144,7 @@ elif configFileDict['technology'] == "ChIPseq":
         task_list = ['1','1.1','2','3','4','4.2','5','6','7','8','8.1'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list: 
-        task_list = ['1.1', '2', '9']
+        task_list = ['1.1', '2','4.2','5', '9']
     if '3' in task_list or '4' in task_list: 
         vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
     if '8' in task_list:
@@ -370,7 +370,7 @@ with Progress() as progress:
 
         if '4.1' in task_list or '4.2' in task_list: # Create fragment Size distribution plots. 
             progress.update(task1, advance=1)
-            if '4' not in task_list: 
+            if '4' not in task_list and configFileDict['technology'] != "RNAseq": 
                 if not args.bam_dir: 
                     vrb.error("You need to specify a bam directory.")
                 else: 
@@ -390,7 +390,7 @@ with Progress() as progress:
             
         if '5' in task_list: ## CREATE BIGWIG
             progress.update(task1, advance=1)
-            if '4' not in task_list: 
+            if '4' not in task_list and configFileDict['technology'] != "RNAseq": 
                 if not args.bam_dir: 
                     vrb.error("You need to specify a bam directory.")
                 else: 
@@ -703,7 +703,7 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             configFileDict['bamQC_log_files'] = []
             
-            if '4' not in task_list:
+            if '4' not in task_list and configFileDict['technology'] != "RNAseq":
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                 if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
                     BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
@@ -715,14 +715,17 @@ with Progress() as progress:
                 else:
                     vrb.error("You need to specify a proper technology.")
             else:
-                
-                BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
-                
                 if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
+                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                
+                
                     BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
                     BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + ',' + BAMQC_WAIT2
                 elif configFileDict['technology'] == "RNAseq":
+                    
+                    BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    
                     BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
                 else:
@@ -740,14 +743,20 @@ with Progress() as progress:
             vrb.boldBullet("Submitting BAM to bigwig")
             progress.update(task1, advance=1)
             configFileDict['bw_log_files'] = []
-            if '4' not in task_list:
+            if '4' not in task_list and configFileDict['technology'] != "RNAseq":
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                 BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
                 configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
             else: 
-                BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
-                configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+                if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
+                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+                    configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+                else:
+                    BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+                    configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+            
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
             task_dico['5'] = "BAM2BW_WAIT"
 
@@ -886,7 +895,6 @@ with Progress() as progress:
                 QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
                 configFileDict['QUANT_WAIT'] = QUANT_WAIT
                 
-        
             else:
                 BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 if configFileDict['quantificationSoftware'] == "QTLtools":

@@ -484,7 +484,7 @@ def submitBamQC(configFileDict, BAM_FILES):
         configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
         
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
-    combineCSV_cmd = "awk 'NR==1 || FNR>1 {print}' *_bamQC_stats.csv > Allsamples_bamQC_stats.csv"
+    combineCSV_cmd = "awk 'NR==1 || FNR>1 {{print}}' {outputDir}/*_bamQC_stats.csv > {outputDir}/Allsamples_bamQC_stats.csv".format(outputDir = OUTPUT_DIR)
     SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = combineCSV_cmd, JID=BAMQC_WAIT)
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
     
@@ -515,7 +515,7 @@ def submitSamtoolsBamQC(configFileDict, BAM_FILES):
             prefix = sampleID
         
         outputFile = f"{OUTPUT_DIR}/{prefix}_bamStats"
-        BAMQC_CMD = "{samtools} stats {bam} > {outputFile} && {plotBam} -p {input_file} {outputFile}".format(samtools = configFileDict['samtools'], bam = bam, outputFile = outputFile, plotBam = configFileDict['plotBam'], input_file = prefix)
+        BAMQC_CMD = "{samtools} stats {bam} > {outputFile}".format(samtools = configFileDict['samtools'], bam = bam, outputFile = outputFile, plotBam = configFileDict['plotBam'], input_file = prefix)
         
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
@@ -531,7 +531,7 @@ def submitSamtoolsBamQC(configFileDict, BAM_FILES):
       
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
     ## COMBINE ALL bamStats files together 
-    COMBINE_CMD = "python3 {bamStatCombineScript} -f {outputDIR}/*_bamStats -out AllSamples.bamStats.csv".format(bamStatCombineScript = configFileDict['combineBamStatScript'], outputDIR = OUTPUT_DIR)
+    COMBINE_CMD = "python3 {bamStatCombineScript} -f {outputDIR}/*_bamStats -out {outputDIR}/AllSamples_samtoolsStats.csv".format(bamStatCombineScript = configFileDict['combineBamStatScript'], outputDIR = OUTPUT_DIR)
     SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = COMBINE_CMD, JID=BAMQC_WAIT)
     out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
     
