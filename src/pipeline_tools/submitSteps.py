@@ -223,6 +223,8 @@ def submitBAM2BW(configFileDict, BAM_FILES):
         if '4' in configFileDict['task_list']:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
             #print(SLURM_CMD)
+        elif configFileDict['technology'] == "RNAseq" and '2' in configFileDict['task_list']:
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD, JID=configFileDict['MAP_WAIT'])
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD)
             #print(SLURM_CMD)
