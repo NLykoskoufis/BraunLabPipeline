@@ -96,11 +96,12 @@ def main(configurationDictionary, task_dictionary, outputHTMLfile):
     
     html = "" 
     x = HtmlReport(outputHTMLfile)
+    lst = x.listCreator()
     html += x.initiate()
     os.system(f"cp {configFileDict['pipeline_path']}/report/ReportCreator.png {configFileDict['report_dir']}")
     html += x.header(f"{now.strftime('%Y-%m-%d %H:%M')}", configFileDict['raw_dir'])
 
-
+    
     if '1' in configFileDict['task_list']:
         
         html += x.SectionCreator().initiateSection()
@@ -110,7 +111,7 @@ def main(configurationDictionary, task_dictionary, outputHTMLfile):
         
         html += x.h3("Log Files")
         
-        lst = x.listCreator()
+        
         tasklogFiles = createLogListForReport(logDico, "1")
         html += lst.initiateList("logList") + "\n"
         for i in tasklogFiles: 
