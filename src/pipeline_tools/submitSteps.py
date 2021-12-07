@@ -182,7 +182,7 @@ def submitFilteringBAM(configFileDict, BAM_FILES):
         input_file = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(OUTPUT_DIR, input_file)
         
-        FILTER_CMD = "{samtools} view {arguments} -@ 4 {input} | awk '{{if(\$3!~/chrM/){{print}}}}' | {samtools} view -b -o {output_file} -@ 4 && {samtools} index {output_file} -@ 4".format(samtools = configFileDict['samtools'], arguments=configFileDict['PCR_duplicates_removal'], input = bam, output_file = OUTPUT_FILE)
+        FILTER_CMD = "{samtools} view {arguments} -@ 4 {input} | awk '{{if(\$3!=\"chrM\") {{print}}}}' | {samtools} view -b -o {output_file} -@ 4 && {samtools} index {output_file} -@ 4".format(samtools = configFileDict['samtools'], arguments=configFileDict['PCR_duplicates_removal'], input = bam, output_file = OUTPUT_FILE)
         
         
         if '3' in configFileDict['task_list']: 
