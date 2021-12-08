@@ -86,6 +86,7 @@ parser.add_argument('-cf','--configuration-file', dest='config_file_path', requi
 #parser.add_argument('-tf_dir', '--tf-dir', dest='backup_fastq_dir', type=str, help='Path to backup fastq diretory. This option is required if you want to perform a backup of fastq files.')
 #parser.add_argument('-tb_dir', '--tb-dir', dest='backup_bam_dir', type=str, help='Path to backup bam diretory. This option in required if you want to perform a backup of bam files.')
 parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
+parser.add_argument('-rp', '--report',dest='reportTask', type=bool,required=False,default=False)
 
 
 ####################
@@ -190,6 +191,9 @@ if args.task == "all":
     print("||    * Running all tasks:", " ".join(task_list))
 else:
     print("||    * Running tasks:", " ".join(task_list))
+
+if args.reportTask:
+    print("||    * Generating report at the end of the run.")
 
 print(f"||    * {bcolors.BOLD}configuration file{bcolors.ENDC}: [{args.config_file_path}]")
 print(f"||    * {bcolors.BOLD}raw dir{bcolors.ENDC}: [{args.raw_dir}]")
@@ -925,6 +929,8 @@ with Progress() as progress:
                 
         JOBCHECK_WAIT = submitJobCheck2(configFileDict,logFiles, wait_condition)
         configFileDict['JOBCHECK_WAIT'] = JOBCHECK_WAIT    
+        
+        
         # ===========================================================================================================
         REPORT = "CREATING REPORT"
         # ===========================================================================================================
@@ -938,7 +944,7 @@ with Progress() as progress:
         # Write the report 
         # Save and export report
 
-        if 'report' in task_list: 
+        if args.reportTask: 
             progress.update(task1, advance=1)
             #convert configFileDict and task_dico to file.
             outputDir = configFileDict['output_dir'] if args.output_dir else configFileDict['raw_dir']    
