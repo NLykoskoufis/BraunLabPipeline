@@ -86,7 +86,7 @@ parser.add_argument('-cf','--configuration-file', dest='config_file_path', requi
 #parser.add_argument('-tf_dir', '--tf-dir', dest='backup_fastq_dir', type=str, help='Path to backup fastq diretory. This option is required if you want to perform a backup of fastq files.')
 #parser.add_argument('-tb_dir', '--tb-dir', dest='backup_bam_dir', type=str, help='Path to backup bam diretory. This option in required if you want to perform a backup of bam files.')
 parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
-parser.add_argument('-rp', '--report',dest='reportTask', type=bool, required=False, default=False, help="Whether to generate html report at the end of the run. Default: False")
+parser.add_argument('-rp', '--report',dest='reportTask',action="store_true", required=False, default=False, help="Whether to generate html report at the end of the run. Default: False")
 
 
 ####################
@@ -195,7 +195,7 @@ else:
 if args.reportTask:
     print(f"||    * html report: {bcolors.OKGREEN}ON{bcolors.ENDC}")
 else:
-    print(f"||    * html report: {bcolors.FAIL}ON{bcolors.ENDC}")
+    print(f"||    * html report: {bcolors.FAIL}OFF{bcolors.ENDC}")
     
 print(f"||    * {bcolors.BOLD}configuration file{bcolors.ENDC}: [{args.config_file_path}]")
 print(f"||    * {bcolors.BOLD}raw dir{bcolors.ENDC}: [{args.raw_dir}]")
