@@ -193,8 +193,10 @@ else:
     print("||    * Running tasks:", " ".join(task_list))
 
 if args.reportTask:
-    print("||    * Generating report at the end of the run.")
-
+    print(f"||    * html report: {bcolors.OKGREEN}ON{bcolors.ENDC}")
+else:
+    print(f"||    * html report: {bcolors.FAIL}ON{bcolors.ENDC}")
+    
 print(f"||    * {bcolors.BOLD}configuration file{bcolors.ENDC}: [{args.config_file_path}]")
 print(f"||    * {bcolors.BOLD}raw dir{bcolors.ENDC}: [{args.raw_dir}]")
 
