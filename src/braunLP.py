@@ -71,11 +71,9 @@ if len(sys.argv) > 1:
 
 parser.add_argument('-raw', '--raw-dir', dest='raw_dir',required=True, type=str, help='Absolute path to the raw directory')
 parser.add_argument('-fastq', '--fastq-dir', dest='fastq_dir', type=str, help='Absolut path fastq to diretor(y)ies. If multiple directories, separate eache path with space')
-#parser.add_argument('-trimfastq', '--trim-fastq-dir', dest='trimmed_fastq_dir', type=str, help='Absolut path trimmed fastq to diretor(y)ies. If multiple directories, separate eache path with space')
 parser.add_argument('-bam', '--bam-dir', dest='bam_dir', type=str, help='Path bam diretory, is multiple, separate with space.')
 parser.add_argument('-peak', '--peak-dir', dest='peaks_dir', type=str, help='Path peak diretory, is multiple, separate with space.')
 
-#parser.add_argument('-sortedBam','--sorted-bam-dir', dest='sorted_bam_dir', type=str, help='Path to sorted bam directory, if not set, first bam directory is used.')
 parser.add_argument('-eqd','--quant-dir', '-quantification_dir', dest='eq_dir', type=str, help='Absolut path quantifications diretory')
 parser.add_argument('-bed', '--bed-dir', dest='bed_dir', type=str, help='Absolut path of where to save/read bed files')
 parser.add_argument('-bw', '--bigwig-dir', dest='bigwig_dir', type=str, help='Absolut path peak calling diretory')
@@ -87,7 +85,7 @@ parser.add_argument('-cf','--configuration-file', dest='config_file_path', requi
 #parser.add_argument('-tb_dir', '--tb-dir', dest='backup_bam_dir', type=str, help='Path to backup bam diretory. This option in required if you want to perform a backup of bam files.')
 parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
 parser.add_argument('-rp', '--report',dest='reportTask',action="store_true", required=False, default=False, help="Whether to generate html report at the end of the run. Default: False")
-
+parser.add_argument('-n', '--dry-run', dest="dryRun", action="store_true", required=False, default=False, help="Runs pipeline without launching any jobs. Jobs are outputed, not executed. NOT IMPLEMENTED YET")
 
 ####################
 #    CHECK ARGS    #
@@ -155,7 +153,6 @@ elif configFileDict['technology'] == "RNAseq":
 else: 
     vrb.error("ERROR. The pipeline can only process ATACseq, ChIPseq or RNAseq data. PLease specify one of them in the configuration file")
 
-task_list.append("report") # No matter what step you are running, always create a report!
 
 if not args.raw_dir: 
     vrb.error("ERROR. You need to specify a raw directory for the pipeline to work")
@@ -185,7 +182,9 @@ configFileDict['task_list'] = task_list
 
 print(f"//=========================={bcolors.BOLD} Pipeline Settings {bcolors.ENDC} ==========================\\\\")
 print("||")
-
+if args.dryRun: 
+    print(f"||    * {bcolors.WARNING}Dry run ON{bcolors.ENDC}. Jobs are outputed on stdout and not run")
+    
 print(f"||    * Processing {bcolors.OKCYAN}{bcolors.BOLD}{configFileDict['technology']}{bcolors.ENDC} data")
 if args.task == "all":
     print("||    * Running all tasks:", " ".join(task_list))
@@ -237,7 +236,7 @@ with Progress() as progress:
             vrb.bullet("Directory already exists. All log files will be written here.")
         else: 
             #vrb.bullet("Creating raw log directory.")
-            createDir(configFileDict['raw_log'])
+            createDir(configFileDict['raw_log'], args.dryRun)
 
 
         if '1' in task_list:
@@ -255,8 +254,8 @@ with Progress() as progress:
             if checkDir(configFileDict['trimmed_fastq_dir']):
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['trimmed_fastq_dir'])
-                createLog(configFileDict['trimmed_fastq_dir'])
+                createDir(configFileDict['trimmed_fastq_dir'], args.dryRun)
+                createLog(configFileDict['trimmed_fastq_dir'], args.dryRun)
             print(f" * {bcolors.OKGREEN}Task 1 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
             
@@ -280,8 +279,8 @@ with Progress() as progress:
             if checkDir(configFileDict['fastQC_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['fastQC_dir'])
-                createLog(configFileDict['fastQC_dir'])
+                createDir(configFileDict['fastQC_dir'], args.dryRun)
+                createLog(configFileDict['fastQC_dir'], args.dryRun)
             print(f" * {bcolors.OKGREEN}Task 1.1 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
 
@@ -306,8 +305,8 @@ with Progress() as progress:
                 if checkDir(configFileDict['bam_dir']): 
                     vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
                 else: 
-                    createDir(configFileDict['bam_dir'])
-                    createLog(configFileDict['bam_dir'])
+                    createDir(configFileDict['bam_dir'], args.dryRun)
+                    createLog(configFileDict['bam_dir'], args.dryRun)
             elif configFileDict['technology'] == "RNAseq":
                 if '1' not in task_list: 
                     if not args.fastq_dir: 
@@ -323,8 +322,8 @@ with Progress() as progress:
                 if checkDir(configFileDict['bam_dir']): 
                     vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
                 else: 
-                    createDir(configFileDict['bam_dir'])
-                    createLog(configFileDict['bam_dir'])
+                    createDir(configFileDict['bam_dir'], args.dryRun)
+                    createLog(configFileDict['bam_dir'], args.dryRun)
             
             else: 
                 vrb.error("You need to specify a technology [ATACseq, ChIPseq, RNAseq] for the pipeline to work.")
@@ -347,8 +346,8 @@ with Progress() as progress:
             if checkDir(configFileDict['marked_bam_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['marked_bam_dir'])
-                createLog(configFileDict['marked_bam_dir'])
+                createDir(configFileDict['marked_bam_dir'], args.dryRun)
+                createLog(configFileDict['marked_bam_dir'], args.dryRun)
             print(f" * {bcolors.OKGREEN}Task 3 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
             
@@ -369,8 +368,8 @@ with Progress() as progress:
             if checkDir(configFileDict['filtered_bam_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['filtered_bam_dir'])
-                createLog(configFileDict['filtered_bam_dir'])    
+                createDir(configFileDict['filtered_bam_dir'], args.dryRun)
+                createLog(configFileDict['filtered_bam_dir'], args.dryRun)    
             print(f" * {bcolors.OKGREEN}Task 4 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
 
@@ -389,8 +388,8 @@ with Progress() as progress:
             if checkDir(configFileDict['bamQC_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['bamQC_dir'])
-                createLog(configFileDict['bamQC_dir']) 
+                createDir(configFileDict['bamQC_dir'], args.dryRun)
+                createLog(configFileDict['bamQC_dir'], args.dryRun) 
             print(f" * {bcolors.OKGREEN}Task 4.1 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
             
@@ -410,8 +409,8 @@ with Progress() as progress:
             if checkDir(configFileDict['bw_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['bw_dir'])
-                createLog(configFileDict['bw_dir']) 
+                createDir(configFileDict['bw_dir'], args.dryRun)
+                createLog(configFileDict['bw_dir'], args.dryRun) 
             print(f" * {bcolors.OKGREEN}Task 5 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
             
@@ -431,8 +430,8 @@ with Progress() as progress:
             if checkDir(configFileDict['bed_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['bed_dir'])
-                createLog(configFileDict['bed_dir']) 
+                createDir(configFileDict['bed_dir'], args.dryRun)
+                createLog(configFileDict['bed_dir'], args.dryRun) 
             print(f" * {bcolors.OKGREEN}Task 6 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
                 
@@ -452,8 +451,8 @@ with Progress() as progress:
             if checkDir(configFileDict['extended_bed_dir']): 
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['extended_bed_dir'])
-                createLog(configFileDict['extended_bed_dir'])
+                createDir(configFileDict['extended_bed_dir'], args.dryRun)
+                createLog(configFileDict['extended_bed_dir'], args.dryRun)
             print(f" * {bcolors.OKGREEN}Task 7 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
  
@@ -473,8 +472,8 @@ with Progress() as progress:
                 if checkDir(configFileDict['peaks_dir']): 
                     vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
                 else: 
-                    createDir(configFileDict['peaks_dir'])
-                    createLog(configFileDict['peaks_dir'])
+                    createDir(configFileDict['peaks_dir'], args.dryRun)
+                    createLog(configFileDict['peaks_dir'], args.dryRun)
             else: 
                 vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
             print(f" * {bcolors.OKGREEN}Task 8 directory checks done{bcolors.ENDC}")
@@ -502,8 +501,8 @@ with Progress() as progress:
                 if checkDir(configFileDict['peakCounts_dir']): 
                     vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
                 else: 
-                    createDir(configFileDict['peakCounts_dir'])
-                    createLog(configFileDict['peakCounts_dir'])
+                    createDir(configFileDict['peakCounts_dir'], args.dryRun)
+                    createLog(configFileDict['peakCounts_dir'], args.dryRun)
             else: 
                 vrb.error("You need to specify a technology, either ATACseq, ChIPseq")
             print(f" * {bcolors.OKGREEN}Task 8.1 directory checks done{bcolors.ENDC}")
@@ -528,8 +527,8 @@ with Progress() as progress:
                 print("fuck")
                 vrb.error("Directory already exists. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else: 
-                createDir(configFileDict['quantification_dir'])
-                createLog(configFileDict['quantification_dir'])
+                createDir(configFileDict['quantification_dir'], args.dryRun)
+                createLog(configFileDict['quantification_dir'], args.dryRun)
             print(f" * {bcolors.OKGREEN}Task 9 directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
 
@@ -545,8 +544,8 @@ with Progress() as progress:
             if checkDir(configFileDict['report_dir']):
                 vrb.error("ERROR. The report directory already exist. We refuse to write in already existing directories to avoid ovewriting or erasing files by mistake.")
             else:
-                createDir(configFileDict['report_dir'])
-                createLog(configFileDict['report_dir'])
+                createDir(configFileDict['report_dir'], args.dryRun)
+                createLog(configFileDict['report_dir'], args.dryRun)
             print(f" * {bcolors.OKGREEN}Report directory checks done{bcolors.ENDC}")
             time.sleep(0.1)
 
@@ -580,7 +579,7 @@ with Progress() as progress:
             #print(FASTQ_FILES)
             configFileDict['trim_log_files'] = [] 
             configFileDict['sample_prefix'] = FASTQ_FILES
-            TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES)
+            TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES, args.dryRun)
             configFileDict['TRIM_WAIT'] = TRIM_WAIT
             #submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
             task_dico['1'] = "TRIM_WAIT"
@@ -595,14 +594,14 @@ with Progress() as progress:
             vrb.boldBullet("Submitting QC of fastq files\n")
             progress.update(task1, advance=1)
             configFileDict['fastqQC_log_files'] = []
-            FASTQC_WAIT = submitFastQC(configFileDict)
+            FASTQC_WAIT = submitFastQC(configFileDict, args.dryRun)
             configFileDict['FASTQC_WAIT'] = FASTQC_WAIT
             #submitJobCheck(configFileDict, "fastqQC_log_files", FASTQC_WAIT)
             task_dico['1.1'] = "FASTQC_WAIT"
             
             vrb.boldBullet("Submitting multiqc to get all FastQC in a single report\n")
             configFileDict['multiqc_log_files'] = []
-            FASTQC_WAIT = submitMultiQC(configFileDict)
+            FASTQC_WAIT = submitMultiQC(configFileDict, args.dryRun)
             #submitJobCheck(configFileDict, "multiqc_log_files", MFASTQC_WAIT)    
             task_log_dico['1.1'] = 'fastqQC_log_files'
             
@@ -625,9 +624,9 @@ with Progress() as progress:
                 configFileDict['sample_prefix'] = FASTQ_PREFIX
             
             if configFileDict["mapper"] == "bowtie2":
-                MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH)
+                MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH, args.dryRun)
             elif configFileDict['mapper'] == "STAR":
-                MAP_WAIT = submitMappingSTAR(configFileDict, FASTQ_PREFIX)    
+                MAP_WAIT = submitMappingSTAR(configFileDict, FASTQ_PREFIX, args.dryRun)    
             else: 
                 vrb.error("You need to specify a mapper")
             
@@ -648,11 +647,11 @@ with Progress() as progress:
             if '1' in task_list or '2' in task_list:
                 BAM_FILES = ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'],i) for i in configFileDict['sample_prefix']]
                 
-                PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
+                PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES, args.dryRun)
                 configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
             else:        
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
-                PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES)
+                PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES, args.dryRun)
                 configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
             #submitJobCheck(configFileDict,'pcr_log_files',PCR_DUPLICATION_WAIT)
             task_dico['3'] = "PCR_DUPLICATION_WAIT" 
@@ -664,16 +663,16 @@ with Progress() as progress:
         # ===========================================================================================================  
 
         if '4' in task_list: 
-            vrb.bullet("Submitting filtering and sorting of BAM files\n")
+            vrb.boldBullet("Submitting filtering and sorting of BAM files\n")
             progress.update(task1, advance=1)
             configFileDict['filtering_log_files'] = []
             if '3' not in task_list:    
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['marked_bam_dir']))
-                FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
+                FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
             else:
                 BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES)
+                FILTER_BAM_WAIT = submitFilteringBAM(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['FILTER_BAM_WAIT'] = FILTER_BAM_WAIT
             #submitJobCheck(configFileDict,'filtering_log_files',FILTER_BAM_WAIT)
             task_dico['4'] = "FILTER_BAM_WAIT"
@@ -690,11 +689,11 @@ with Progress() as progress:
             configFileDict['atacQC_log_files'] = []
             if '4' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
-                ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES)
+                ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['ATACQC_WAIT'] = ATACQC_WAIT
             else: 
                 BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES)
+                ATACQC_WAIT = submitATACseqQC(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['ATACQC_WAIT'] = ATACQC_WAIT
             task_dico['4.1'] = "ATACQC_WAIT"
 
@@ -712,11 +711,11 @@ with Progress() as progress:
             if '4' not in task_list and configFileDict['technology'] != "RNAseq":
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                 if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
-                    BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
-                    BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES, args.dryRun)
+                    BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + "," + BAMQC_WAIT2
                 elif configFileDict['technology'] == "RNAseq":
-                    BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
                 else:
                     vrb.error("You need to specify a proper technology.")
@@ -725,14 +724,14 @@ with Progress() as progress:
                     BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']] + ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 
                 
-                    BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES)
-                    BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    BAMQC_WAIT = submitBamQC(configFileDict, BAM_FILES, args.dryRun)
+                    BAMQC_WAIT2 = submitSamtoolsBamQC(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + ',' + BAMQC_WAIT2
                 elif configFileDict['technology'] == "RNAseq":
                     
                     BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                     
-                    BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES)
+                    BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
                 else:
                     vrb.error("You need to specify a proper technology.")
@@ -751,16 +750,16 @@ with Progress() as progress:
             configFileDict['bw_log_files'] = []
             if '4' not in task_list and configFileDict['technology'] != "RNAseq":
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
-                BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+                BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
             else: 
                 if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq":
                     BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                    BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+                    BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
                 else:
                     BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
-                    BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES)
+                    BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
             
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
@@ -774,16 +773,16 @@ with Progress() as progress:
         # ===========================================================================================================   
 
         if '6' in task_list: # Need to wait for '4' or none
-            vrb.bullet("Submitting bam2bed")
+            vrb.boldBullet("Submitting bam2bed")
             progress.update(task1, advance=1)
             configFileDict['bam2bed_log_files'] = []
             if '4' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
-                BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
+                BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
             else: 
                 BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES)
+                BAM2BED_WAIT = submitBAM2BED(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['BAM2BED_WAIT'] = BAM2BED_WAIT
             #submitJobCheck(configFileDict,'bam2bed_log_files',BAM2BED_WAIT)
             task_dico['6'] = "BAM2BED_WAIT"
@@ -796,16 +795,16 @@ with Progress() as progress:
         # ===========================================================================================================   
 
         if '7' in task_list:
-            vrb.bullet("Submitting extension of reads in bed file")
+            vrb.boldBullet("Submitting extension of reads in bed file")
             progress.update(task1, advance=1)
             configFileDict['extend_log_files'] = []
             if '4' not in task_list:
                 BED_FILES = glob.glob("{}/*.bed".format(configFileDict['bed_dir']))
-                EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
+                EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES, args.dryRun)
                 configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
             else: 
                 BED_FILES = ["{}/{}.bed".format(configFileDict['bed_dir'], i) for i in configFileDict['sample_prefix']]
-                EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES)
+                EXT_BED_WAIT = submitExtendReads(configFileDict, BED_FILES, args.dryRun)
                 configFileDict['EXT_BED_WAIT'] = EXT_BED_WAIT
             #submitJobCheck(configFileDict,'extend_log_files',EXT_BED_WAIT)   
             
@@ -823,11 +822,11 @@ with Progress() as progress:
             if configFileDict['technology'] == "ATACseq":
                 if '7' not in task_list: 
                     BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
-                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
+                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
                     BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
-                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES)
+                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
             elif configFileDict['technology'] == "ChIPseq":
@@ -839,7 +838,7 @@ with Progress() as progress:
                     if len(BED_FILES) != len(SAMPLE_BED):
                         vrb.error("Samples and Inputs files do not match!")
                         
-                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES)
+                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
                     FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
@@ -848,7 +847,7 @@ with Progress() as progress:
                     SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
                     BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
                     #print(BED_FILES)
-                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES)
+                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             else:
                 vrb.error("You are trying to run peak calling with data that is neither ATAC-seq nor ChIP-seq. Did you forget to change the technology?")
@@ -864,7 +863,7 @@ with Progress() as progress:
         # ===========================================================================================================
 
         if '8.1' in task_list: 
-            vrb.bullet("Submitting peak 2 Counts\n")
+            vrb.boldBullet("Submitting peak 2 Counts\n")
             progress.update(task1, advance=1)
             configFileDict['peak2Count_log_files'] = []
             if '8' not in task_list : 
@@ -880,7 +879,7 @@ with Progress() as progress:
             else:
                 EXTENDED_BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix'] if os.path.basename(i).split("_")[0] != "Input"]
             
-            PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,EXTENDED_BED_FILES)
+            PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,EXTENDED_BED_FILES, args.dryRun)
             configFileDict['PEAK2COUNT_CALLING_WAIT'] = PEAK2COUNT_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak2Count_log_files',PEAK2COUNT_CALLING_WAIT)
             
@@ -898,15 +897,15 @@ with Progress() as progress:
             configFileDict['quant_log_files'] = []
             if '2' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
-                QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES)
+                QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['QUANT_WAIT'] = QUANT_WAIT
                 
             else:
                 BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 if configFileDict['quantificationSoftware'] == "QTLtools":
-                    QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES)
+                    QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 elif configFileDict['quantificationSoftware'] == "featureCounts":
-                    QUANT_WAIT = submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES)
+                    QUANT_WAIT = submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, args.dryRun)
                 else: 
                     vrb.error("You need to specify which software to use for gene quantification")
             configFileDict['QUANT_WAIT'] = QUANT_WAIT    
@@ -929,7 +928,7 @@ with Progress() as progress:
         wait_condition = ",".join(wait_condition)
         logFiles = [item for sublist in LOG_FILES for item in sublist]
                 
-        JOBCHECK_WAIT = submitJobCheck2(configFileDict,logFiles, wait_condition)
+        JOBCHECK_WAIT = submitJobCheck2(configFileDict,logFiles, wait_condition, args.dryRun)
         configFileDict['JOBCHECK_WAIT'] = JOBCHECK_WAIT    
         
         
@@ -982,11 +981,14 @@ with Progress() as progress:
             
             SLURM = "{wsbatch} --dependency=afterok:{JID} -o {output_dir}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], JID = wait_condition, cmd=CMD, output_dir = f"{reportDir}/log")
         
+            if args.dryRun:
+                print(SLURM)
+            else:
+                out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
+                REPORT_WAIT = "".join(catchJID(out))
+                configFileDict['REPORT_WAIT'] = REPORT_WAIT
+                configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
             
-            out = subprocess.check_output(SLURM, shell=True, universal_newlines=True,stderr=subprocess.STDOUT)
-            REPORT_WAIT = "".join(catchJID(out))
-            configFileDict['REPORT_WAIT'] = REPORT_WAIT
-            configFileDict['report_log_file'].append(getSlurmLog("{}/log".format(configFileDict["report_dir"]),configFileDict['uid'],out))
             task_dico['report'] = "REPORT_WAIT"
             task_log_dico['report'] = 'report_log_file'
     
@@ -1029,8 +1031,12 @@ DONE_CMD = "python3 {mail} -add {addresses} -subject {subject} -msg '{msg}' -joi
 
 
 SLURM_CMD = "{wsbatch} -o {raw_log}/{uid}_slurm-%j.out --dependency=afterok:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], raw_log = configFileDict['raw_log'], uid = configFileDict['uid'],JID = wait_condition, cmd = DONE_CMD)
-out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+if args.dryRun:
+    print(SLURM_CMD)
+else:
+    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 
+## ALL DONE :) 
 
 
 

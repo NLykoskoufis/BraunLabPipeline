@@ -12,7 +12,7 @@ pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 sys.path.append(pipeline_tools_path)
 from slurmTools import *
 
-def submitTrimming(configFileDict, FASTQ_PREFIX):
+def submitTrimming(configFileDict, FASTQ_PREFIX, dryRun=False):
     """Function that submits slurm jobs for trimming reads.
 
     Args:
@@ -31,21 +31,23 @@ def submitTrimming(configFileDict, FASTQ_PREFIX):
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz  {fastq_dir}/{file}*_R1_001.fastq.gz ".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
             
         SLURM_CMD = "{wsbatch} {slurm} -o {trimmed_log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_trim"], trimmed_log_dir = "{}/log".format(configFileDict["trimmed_fastq_dir"]), uid = configFileDict["uid"], cmd = TRIM_CMD)
-        #print(SLURM_CMD)
         
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        TRIM_JID_LIST.append(catchJID(out))
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            TRIM_JID_LIST.append(catchJID(out))
         
-        configFileDict['trim_log_files'].append(getSlurmLog("{}/log".format(configFileDict["trimmed_fastq_dir"]),configFileDict['uid'],out))
-        #TRIM_JID_LIST.append('0') #### FOR DEBUGGING PURPOSES
+            configFileDict['trim_log_files'].append(getSlurmLog("{}/log".format(configFileDict["trimmed_fastq_dir"]),configFileDict['uid'],out))
         
-            
-    TRIM_WAIT = ",".join(TRIM_JID_LIST)
-    #del TRIM_JID_LIST
-    return TRIM_WAIT
+    if dryRun:
+        return "dryRun"
+    else:    
+        TRIM_WAIT = ",".join(TRIM_JID_LIST)
+        return TRIM_WAIT
 
 
-def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
+def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH, dryRun=False):
     """[Submits jobs for Mapping using Bowtie2]
 
     Args:
@@ -71,17 +73,23 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH):
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = MAP_CMD)
             #print(SLURM_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        MAP_JID_LIST.append(catchJID(out))
         
-        configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bam_dir"]),configFileDict['uid'],out))
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            MAP_JID_LIST.append(catchJID(out))
+            configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bam_dir"]),configFileDict['uid'],out))
     
-    MAP_WAIT = ",".join(MAP_JID_LIST)
-    #del MAP_JID_LIST
-    return MAP_WAIT
+    if dryRun:
+        return "dryRun"
+    else:
+        MAP_WAIT = ",".join(MAP_JID_LIST)
+        #del MAP_JID_LIST
+        return MAP_WAIT
 
 
-def submitMappingSTAR(configFileDict, FASTQ_PREFIX):
+def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
     """[Submits jobs for Mapping using STAR]
 
     Args:
@@ -120,17 +128,23 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX):
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = STAR_CMD)
             #print(SLURM_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        MAP_JID_LIST.append(catchJID(out))
         
-        configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bam_dir"]),configFileDict['uid'],out))
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            MAP_JID_LIST.append(catchJID(out))
+            configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bam_dir"]),configFileDict['uid'],out))
     
-    MAP_WAIT = ",".join(MAP_JID_LIST)
-    return MAP_WAIT
+    if dryRun:
+        return "dryRun"
+    else:
+        MAP_WAIT = ",".join(MAP_JID_LIST)
+        return MAP_WAIT
 
 
 
-def submitPCRduplication(configFileDict,BAM_FILES):
+def submitPCRduplication(configFileDict,BAM_FILES, dryRun=False):
     """[Submits jobs for marking PCR duplicated reads using PICARD]
 
     Args:
@@ -157,16 +171,21 @@ def submitPCRduplication(configFileDict,BAM_FILES):
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD)
         
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
-        PCR_DUPLICATION_WAIT = PCR_DUP_JID_LIST.append(catchJID(out))
-        
-        configFileDict['pcr_log_files'].append(getSlurmLog("{}/log".format(configFileDict["marked_bam_dir"]),configFileDict['uid'],out))
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+            PCR_DUPLICATION_WAIT = PCR_DUP_JID_LIST.append(catchJID(out))
+            configFileDict['pcr_log_files'].append(getSlurmLog("{}/log".format(configFileDict["marked_bam_dir"]),configFileDict['uid'],out))
     
-    PCR_DUPLICATION_WAIT = ",".join(PCR_DUP_JID_LIST)
-    del PCR_DUP_JID_LIST 
-    return PCR_DUPLICATION_WAIT
+    if dryRun:
+        return "dryRun"
+    else:
+        PCR_DUPLICATION_WAIT = ",".join(PCR_DUP_JID_LIST)
+        del PCR_DUP_JID_LIST 
+        return PCR_DUPLICATION_WAIT
 
-def submitFilteringBAM(configFileDict, BAM_FILES):
+def submitFilteringBAM(configFileDict, BAM_FILES, dryRun=False):
     """[Submits jobs for filtering and sorting BAM files]
 
     Args:
@@ -190,19 +209,23 @@ def submitFilteringBAM(configFileDict, BAM_FILES):
             #print(SLURM_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD)
-            
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        BAM_FILTER_JID_LIST.append(catchJID(out))
-        
-        configFileDict['filtering_log_files'].append(getSlurmLog("{}/log".format(configFileDict["filtered_bam_dir"]),configFileDict['uid'],out))
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            BAM_FILTER_JID_LIST.append(catchJID(out))
+            configFileDict['filtering_log_files'].append(getSlurmLog("{}/log".format(configFileDict["filtered_bam_dir"]),configFileDict['uid'],out))
     
-    FILTER_BAM_WAIT = ",".join(BAM_FILTER_JID_LIST)
-    del BAM_FILTER_JID_LIST
-    return FILTER_BAM_WAIT
+    if dryRun:
+        return "dryRun"
+    else:
+        FILTER_BAM_WAIT = ",".join(BAM_FILTER_JID_LIST)
+        del BAM_FILTER_JID_LIST
+        return FILTER_BAM_WAIT
     
 
  
-def submitBAM2BW(configFileDict, BAM_FILES):
+def submitBAM2BW(configFileDict, BAM_FILES, dryRun=False):
     """[Submits jobs for removal of PCR duplicated reads]
 
     Args:
@@ -227,19 +250,23 @@ def submitBAM2BW(configFileDict, BAM_FILES):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD, JID=configFileDict['MAP_WAIT'])
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BW_CMD)
-            #print(SLURM_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        BW_JID_LIST.append(catchJID(out))
-
-        configFileDict['bw_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bw_dir"]),configFileDict['uid'],out))
         
-        
-    BAM2BW_WAIT = ",".join(BW_JID_LIST)
-    del BW_JID_LIST
-    return BAM2BW_WAIT
+        if dryRun: 
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            BW_JID_LIST.append(catchJID(out))
+            configFileDict['bw_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bw_dir"]),configFileDict['uid'],out))
+            
+    if dryRun:
+        return "dryRun"
+    else:    
+        BAM2BW_WAIT = ",".join(BW_JID_LIST)
+        del BW_JID_LIST
+        return BAM2BW_WAIT
             
         
-def submitBAM2BED(configFileDict, BAM_FILES):
+def submitBAM2BED(configFileDict, BAM_FILES, dryRun=False):
     """[Submits jobs for removal of PCR duplicated reads]
 
     Args:
@@ -263,18 +290,22 @@ def submitBAM2BED(configFileDict, BAM_FILES):
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAM2BED_CMD)
             #print(SLURM_CMD)
+        
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            BAM2BED_JID_LIST.append(catchJID(out))
+            configFileDict['bam2bed_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bed_dir"]),configFileDict['uid'],out))
             
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        BAM2BED_JID_LIST.append(catchJID(out))
-        
-        configFileDict['bam2bed_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bed_dir"]),configFileDict['uid'],out))
-        
-        
-    BAM2BED_WAIT = ",".join(BAM2BED_JID_LIST)
-    del BAM2BED_JID_LIST
-    return BAM2BED_WAIT
+    if dryRun:
+        return "dryRun"
+    else:   
+        BAM2BED_WAIT = ",".join(BAM2BED_JID_LIST)
+        del BAM2BED_JID_LIST
+        return BAM2BED_WAIT
 
-def submitExtendReads(configFileDict,BED_FILES):
+def submitExtendReads(configFileDict,BED_FILES, dryRun=False):
     """[Submits jobs for removal of PCR duplicated reads]
 
     Args:
@@ -296,17 +327,23 @@ def submitExtendReads(configFileDict,BED_FILES):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = EXTENDBED_CMD, JID=configFileDict['BAM2BED_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = EXTENDBED_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        EXTENDBED_JID_LIST.append(catchJID(out))
         
-        configFileDict['extend_log_files'].append(getSlurmLog("{}/log".format(configFileDict["extended_bed_dir"]),configFileDict['uid'],out))
-        
-    EXT_BED_WAIT = ",".join(EXTENDBED_JID_LIST)
-    del EXTENDBED_JID_LIST
-    return EXT_BED_WAIT
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            EXTENDBED_JID_LIST.append(catchJID(out))
+            configFileDict['extend_log_files'].append(getSlurmLog("{}/log".format(configFileDict["extended_bed_dir"]),configFileDict['uid'],out))
+    
+    if dryRun:
+        return "dryRun"
+    else:
+        EXT_BED_WAIT = ",".join(EXTENDBED_JID_LIST)
+        del EXTENDBED_JID_LIST
+        return EXT_BED_WAIT
 
 
-def submitPeakCalling(configFileDict,BED_FILES):
+def submitPeakCalling(configFileDict,BED_FILES, dryRun=False):
     """[Submits jobs peak calling]
 
     Args:
@@ -328,17 +365,23 @@ def submitPeakCalling(configFileDict,BED_FILES):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        PEAK_CALLING_JID_LIST.append(catchJID(out))
         
-        configFileDict['peak_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peaks_dir"]),configFileDict['uid'],out))
-        
-    PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
-    del PEAK_CALLING_JID_LIST
-    return PEAK_CALLING_WAIT
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            PEAK_CALLING_JID_LIST.append(catchJID(out))
+            configFileDict['peak_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peaks_dir"]),configFileDict['uid'],out))
+            
+    if dryRun:
+        return "dryRun"
+    else:
+        PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
+        del PEAK_CALLING_JID_LIST
+        return PEAK_CALLING_WAIT
 
 
-def submitChIPseqPeakCalling(configFileDict,BED_FILES):
+def submitChIPseqPeakCalling(configFileDict,BED_FILES, dryRun=False):
     """[Submits jobs peak calling]
 
     Args:
@@ -364,18 +407,24 @@ def submitChIPseqPeakCalling(configFileDict,BED_FILES):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        PEAK_CALLING_JID_LIST.append(catchJID(out))
         
-        configFileDict['peak_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peaks_dir"]),configFileDict['uid'],out))
-        
-    PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
-    del PEAK_CALLING_JID_LIST
-    return PEAK_CALLING_WAIT
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            PEAK_CALLING_JID_LIST.append(catchJID(out))
+            configFileDict['peak_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peaks_dir"]),configFileDict['uid'],out))
+    
+    if dryRun:
+        return "dryRun"
+    else:    
+        PEAK_CALLING_WAIT = ",".join(PEAK_CALLING_JID_LIST)
+        del PEAK_CALLING_JID_LIST
+        return PEAK_CALLING_WAIT
 
 
 
-def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES):
+def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun=False):
     """[Submits jobs peak2Counts]
 
     Args:
@@ -408,24 +457,32 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES):
     else:
         SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs, JID=wait_condition)
     #print(SLURM_CMD)
-    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-    PEAK_CALLING_JID_LIST = catchJID(out)
+    if dryRun:
+        print(SLURM_CMD)
+    else:
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        PEAK_CALLING_JID_LIST = catchJID(out)
+        configFileDict['peak2Count_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peakCounts_dir"]),configFileDict['uid'],out))
     
-    configFileDict['peak2Count_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peakCounts_dir"]),configFileDict['uid'],out))
-        
-    PEAK_CALLING_WAIT = PEAK_CALLING_JID_LIST
-    del PEAK_CALLING_JID_LIST
-    return PEAK_CALLING_WAIT
+    if dryRun:
+        return "dryRun"
+    else:
+        PEAK_CALLING_WAIT = PEAK_CALLING_JID_LIST
+        del PEAK_CALLING_JID_LIST
+        return PEAK_CALLING_WAIT
 
 
-def submitJobCheck(configFileDict, log_key, wait_key):
+def submitJobCheck(configFileDict, log_key, wait_key, dryRun=False):
     log_files = configFileDict[log_key]
     for file in log_files: 
         cmd = "python3 {jobCheck} -w -log {file}".format(jobCheck=configFileDict['jobCheck'], file=file)
         SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
 
-def submitJobCheck2(configFileDict, logFiles, wait_key):
+def submitJobCheck2(configFileDict, logFiles, wait_key, dryRun=False):
     cmd = []
     for file in logFiles:
         cmd.append("python3 {jobCheck} -w -log {file}".format(jobCheck=configFileDict['jobCheck'], file=file))
@@ -433,11 +490,14 @@ def submitJobCheck2(configFileDict, logFiles, wait_key):
     cmd = "; ".join(cmd)
     
     SLURM_CMD = "{wsbatch} --dependency=afterany:{JID} -o {raw_log}/slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch=configFileDict['wsbatch'], cmd=cmd, JID=wait_key, raw_log = configFileDict['raw_log'])
-    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
-    JOBCHECK_WAIT = catchJID(out)
-    return JOBCHECK_WAIT
+    if dryRun:
+        print(SLURM_CMD)
+    else:
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+        JOBCHECK_WAIT = catchJID(out)
+        return JOBCHECK_WAIT
 
-def submitATACseqQC(configFileDict, BAM_FILES):
+def submitATACseqQC(configFileDict, BAM_FILES, dryRun=False):
     ATACQC_JID_LIST = []
     OUTPUT_DIR = configFileDict['bamQC_dir']
     for bam in BAM_FILES:
@@ -451,21 +511,25 @@ def submitATACseqQC(configFileDict, BAM_FILES):
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = ATACQC_CMD)
             #print(SLURM_CMD)
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        ATACQC_JID_LIST.append(catchJID(out))
-
-        configFileDict['atacQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
         
-    
-    ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
-    
-    del ATACQC_JID_LIST
-    return ATACQC_WAIT
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            ATACQC_JID_LIST.append(catchJID(out))
+            configFileDict['atacQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
+        
+    if dryRun: 
+        return "dryRun"
+    else:
+        ATACQC_WAIT = ",".join(ATACQC_JID_LIST)
+        del ATACQC_JID_LIST
+        return ATACQC_WAIT
 
 
 
 
-def submitBamQC(configFileDict, BAM_FILES):
+def submitBamQC(configFileDict, BAM_FILES, dryRun=False):
     BAMQC_JID_LIST = []
     OUTPUT_DIR = configFileDict['bamQC_dir']
     for bam in BAM_FILES:
@@ -480,21 +544,28 @@ def submitBamQC(configFileDict, BAM_FILES):
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD)
 
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        BAMQC_JID_LIST.append(catchJID(out))
-
-        configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
-        
-    BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
-    combineCSV_cmd = "awk 'NR==1 || FNR>1 {{print}}' {outputDir}/*_bamQC_stats.csv > {outputDir}/Allsamples_bamQC_stats.csv".format(outputDir = OUTPUT_DIR)
-    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = combineCSV_cmd, JID=BAMQC_WAIT)
-    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            BAMQC_JID_LIST.append(catchJID(out))
+            configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
     
-    BAMQC_WAIT += "," + catchJID(out)
-    del BAMQC_JID_LIST
-    return BAMQC_WAIT
+    combineCSV_cmd = "awk 'NR==1 || FNR>1 {{print}}' {outputDir}/*_bamQC_stats.csv > {outputDir}/Allsamples_bamQC_stats.csv".format(outputDir = OUTPUT_DIR)
 
-def submitSamtoolsBamQC(configFileDict, BAM_FILES):
+    BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
+    SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = combineCSV_cmd, JID=BAMQC_WAIT)
+    
+    if dryRun:
+        print(SLURM_CMD)
+        return "dryRun"
+    else:
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BAMQC_WAIT += "," + catchJID(out)
+        del BAMQC_JID_LIST
+        return BAMQC_WAIT
+
+def submitSamtoolsBamQC(configFileDict, BAM_FILES, dryRun=False):
     BAMQC_JID_LIST = []
     OUTPUT_DIR = configFileDict['bamQC_dir']
     for bam in BAM_FILES:
@@ -525,23 +596,29 @@ def submitSamtoolsBamQC(configFileDict, BAM_FILES):
         else:
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = BAMQC_CMD)
 
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        BAMQC_JID_LIST.append(catchJID(out))
-
-        configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            BAMQC_JID_LIST.append(catchJID(out))
+            configFileDict['bamQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bamQC_dir"]),configFileDict['uid'],out))
     
       
     BAMQC_WAIT = ",".join(BAMQC_JID_LIST)
     ## COMBINE ALL bamStats files together 
     COMBINE_CMD = "python3 {bamStatCombineScript} -f {outputDIR}/*_bamStats -out {outputDIR}/AllSamples_samtoolsStats.csv".format(bamStatCombineScript = configFileDict['combineBamStatScript'], outputDIR = OUTPUT_DIR)
     SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = COMBINE_CMD, JID=BAMQC_WAIT)
-    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
     
-    BAMQC_WAIT = BAMQC_WAIT + "," + catchJID(out)
-    del BAMQC_JID_LIST
-    return BAMQC_WAIT 
+    if dryRun:
+        print(SLURM_CMD)
+        return "dryRun"
+    else:
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        BAMQC_WAIT = BAMQC_WAIT + "," + catchJID(out)
+        del BAMQC_JID_LIST
+        return BAMQC_WAIT 
 
-def submitFastQC(configFileDict):
+def submitFastQC(configFileDict, dryRun=False):
     FASTQC_JID_LIST = []
     OUTPUT_DIR = configFileDict['fastQC_dir']
     if '1' in configFileDict['task_list']: 
@@ -560,16 +637,22 @@ def submitFastQC(configFileDict):
             else: 
                 SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'], cmd = FASTQC_CMD)
                 #print(SLURM_CMD)
-            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-            FASTQC_JID_LIST.append(catchJID(out))
             
-            configFileDict['fastqQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["fastQC_dir"]),configFileDict['uid'],out))
-        
-    FASTQC_WAIT = ",".join(FASTQC_JID_LIST)
-    del FASTQC_JID_LIST
-    return FASTQC_WAIT
+            if dryRun:
+                print(SLURM_CMD)
+            else:
+                out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+                FASTQC_JID_LIST.append(catchJID(out))
+                configFileDict['fastqQC_log_files'].append(getSlurmLog("{}/log".format(configFileDict["fastQC_dir"]),configFileDict['uid'],out))
+    
+    if dryRun:
+        return "dryRun"
+    else:
+        FASTQC_WAIT = ",".join(FASTQC_JID_LIST)
+        del FASTQC_JID_LIST
+        return FASTQC_WAIT
 
-def submitMultiQC(configFileDict):
+def submitMultiQC(configFileDict, dryRun=False):
     MFASTQC_JID_LIST = []
     INPUT_DIR = configFileDict['fastQC_dir']
     OUTPUT_DIR = INPUT_DIR
@@ -577,16 +660,20 @@ def submitMultiQC(configFileDict):
     SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['FASTQC_WAIT'], cmd = cmd)
     #print(SLURM_CMD)
     
-    out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-    MFASTQC_JID_LIST.append(catchJID(out))
-            
-    configFileDict['multiqc_log_files'].append(getSlurmLog("{}/log".format(configFileDict["fastQC_dir"]),configFileDict['uid'],out))
-    
-    MFASTQC_WAIT = ",".join(MFASTQC_JID_LIST)
-    del MFASTQC_JID_LIST
-    return MFASTQC_WAIT
+    if dryRun:
+        print(SLURM_CMD)
+        return "dryRun"
+    else:
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        MFASTQC_JID_LIST.append(catchJID(out))
+                
+        configFileDict['multiqc_log_files'].append(getSlurmLog("{}/log".format(configFileDict["fastQC_dir"]),configFileDict['uid'],out))
+        
+        MFASTQC_WAIT = ",".join(MFASTQC_JID_LIST)
+        del MFASTQC_JID_LIST
+        return MFASTQC_WAIT
 
-def submitQTLtoolsExonQuantification(configFileDict, BAM_FILES):
+def submitQTLtoolsExonQuantification(configFileDict, BAM_FILES, dryRun=False):
     QUANT_JID_LIST = []
     OUTPUT_DIR = configFileDict['quantification_dir']
     
@@ -603,17 +690,23 @@ def submitQTLtoolsExonQuantification(configFileDict, BAM_FILES):
            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'])
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        QUANT_JID_LIST.append(catchJID(out))
-            
-        configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
         
-    QUANT_WAIT = ",".join(QUANT_JID_LIST)
-    del QUANT_JID_LIST
-    return QUANT_WAIT
+        if dryRun:
+            print(SLURM_CMD)
+        else:
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            QUANT_JID_LIST.append(catchJID(out))    
+            configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
+    
+    if dryRun:
+        return "dryRun"   
+    else:
+        QUANT_WAIT = ",".join(QUANT_JID_LIST)
+        del QUANT_JID_LIST
+        return QUANT_WAIT
 
 
-def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES):
+def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, dryRun=False):
     QUANT_JID_LIST = []
     OUTPUT_DIR = configFileDict['quantification_dir']
     
@@ -628,20 +721,25 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES):
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'])
-        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-        QUANT_JID_LIST.append(catchJID(out))
-
-        configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
+        
+        if dryRun:
+            print(SLURM_CMD)
+        else:    
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            QUANT_JID_LIST.append(catchJID(out))
+            configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
        
     ### SUBMIT COMBINE QUANTIFICATIONS TO MULTI-SAMPLE BED FILE
     COMBINEQUAN = "python3 {combineQuan} --file-list {outputDir}/*.txt --outputFile Allsamples.chrALL.raw.gene.count.bed --gtf-file {gtfFile}".format(combineQuan = configFileDict['combineQuanScript'], outputDir = OUTPUT_DIR, gtfFile = configFileDict['annotation'])
     
     slurm_cmd = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = ",".join(QUANT_JID_LIST), cmd = COMBINEQUAN) 
     
-    out = subprocess.check_output(slurm_cmd, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
-    
-    QUANT_JID_LIST.append(catchJID(out))
-    QUANT_WAIT = ",".join(QUANT_JID_LIST)
-        
-    del QUANT_JID_LIST
-    return QUANT_WAIT
+    if dryRun:
+        print(SLURM_CMD)    
+        return "dryRun"
+    else:
+        out = subprocess.check_output(slurm_cmd, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        QUANT_JID_LIST.append(catchJID(out))
+        QUANT_WAIT = ",".join(QUANT_JID_LIST)
+        del QUANT_JID_LIST
+        return QUANT_WAIT
