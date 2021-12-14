@@ -85,7 +85,7 @@ parser.add_argument('-cf','--configuration-file', dest='config_file_path', requi
 #parser.add_argument('-tb_dir', '--tb-dir', dest='backup_bam_dir', type=str, help='Path to backup bam diretory. This option in required if you want to perform a backup of bam files.')
 parser.add_argument('-t','--task', dest='task', type=str, required=True, nargs='+', help='')
 parser.add_argument('-rp', '--report',dest='reportTask',action="store_true", required=False, default=False, help="Whether to generate html report at the end of the run. Default: False")
-parser.add_argument('-n', '--dry-run', dest="dryRun", action="store_true", required=False, default=False, help="Runs pipeline without launching any jobs. Jobs are outputed, not executed. NOT IMPLEMENTED YET")
+parser.add_argument('-n', '--dry-run', dest="dryRun", action="store_true", required=False, default=False, help="Runs pipeline without launching any jobs. Jobs are outputed, not executed")
 
 ####################
 #    CHECK ARGS    #
