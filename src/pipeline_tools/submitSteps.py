@@ -181,28 +181,34 @@ def submitPCRduplication(configFileDict,BAM_FILES, dryRun=False):
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
     """
     PCR_DUP_JID_LIST = []
-          
     OUTPUT_DIR = configFileDict['marked_bam_dir']    
+    
+    Samtools = configFileDict['samtools']
+    picardTools = configFileDict['picard']
+    
+    wsbatch = configFileDict['wsbatch']
+    slurmGeneral = configFileDict['slurm_general']
+    
     for bam in BAM_FILES: 
         input = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.sortedByCoord.Picard.bam".format(OUTPUT_DIR,input)
         
         METRIX_FILE = "{}/{}.metrix".format(OUTPUT_DIR,input)
         
-        PCR_CMD = "{PICARD} MarkDuplicates I={input} O={output} M={metrix}; {samtools} index {output}".format(PICARD=configFileDict['picard'], input=bam, output=OUTPUT_FILE, metrix=METRIX_FILE, samtools = configFileDict['samtools'])
+        PCR_CMD = "{PICARD} MarkDuplicates I={input} O={output} M={metrix}; {samtools} index {output}".format(PICARD=picardTools, input=bam, output=OUTPUT_FILE, metrix=METRIX_FILE, samtools = Samtools)
         
         if '2' in configFileDict['task_list']:
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['MAP_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = wsbatch, slurm = slurmGeneral, log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD, JID=configFileDict['MAP_WAIT'])
             #print(SLURM_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = wsbatch, slurm = slurmGeneral, log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PCR_CMD)
         
         if dryRun:
             print(SLURM_CMD)
         else:
             out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
             PCR_DUPLICATION_WAIT = PCR_DUP_JID_LIST.append(catchJID(out))
-            configFileDict['pcr_log_files'].append(getSlurmLog("{}/log".format(configFileDict["marked_bam_dir"]),configFileDict['uid'],out))
+            configFileDict['pcr_log_files'].append(getSlurmLog("{}/log".format(OUTPUT_DIR),configFileDict['uid'],out))
     
     if dryRun:
         return "dryRun"
@@ -223,6 +229,10 @@ def submitFilteringBAM(configFileDict, BAM_FILES, dryRun=False):
     """
     BAM_FILTER_JID_LIST = []
     OUTPUT_DIR = configFileDict['filtered_bam_dir']
+    
+    
+    
+    
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(OUTPUT_DIR, input_file)
@@ -232,7 +242,7 @@ def submitFilteringBAM(configFileDict, BAM_FILES, dryRun=False):
         
         if '3' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
-            #print(SLURM_CMD)
+            
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD)
         if dryRun:
