@@ -67,19 +67,28 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH, dryRun=False):
     """  
     MAP_JID_LIST = []
     configFileDict['mapping_log_files'] = []
+    
+    wsbatch = configFileDict['wsbatch']
+    slurmMappingCommand = configFileDict['slurm_mapping']
+    bowtie2 = configFileDict['bowtie2']
+    bowtieParameters = configFileDict['bowtie_parameters']
+    Samtools = configFileDict['samtools']
+    bamDirectory = configFileDict['bam_dir']
+    referenceGenome = configFileDict['reference_genome']
+    
+    
     for file in FASTQ_PREFIX:                                                        
 
-        
         if configFileDict['pairend'] ==  "1": 
-            MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam && {samtools} index {bam_dir}/{file}.sortedByCoord.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'])
+            MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam && {samtools} index {bam_dir}/{file}.sortedByCoord.bam".format(mapper= bowtie2, parameters= bowtieParameters,dir=FASTQ_PATH,file=file, samtools = Samtools, bam_dir= bamDirectory, REFSEQ=referenceGenome)
         else:
-            MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -U {dir}/{file}*_R1_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam && {samtools} index {bam_dir}/{file}.sortedByCoord.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome']) 
+            MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -U {dir}/{file}*_R1_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam && {samtools} index {bam_dir}/{file}.sortedByCoord.bam".format(mapper=bowtie2, parameters=bowtieParameters,dir=FASTQ_PATH,file=file, samtools = Samtools, bam_dir=bamDirectory, REFSEQ=referenceGenome) 
         
         if '1' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = MAP_CMD, JID=configFileDict["TRIM_WAIT"])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = wsbatch, slurm = slurmMappingCommand, log_dir = "{}/log".format(bamDirectory), uid = configFileDict["uid"], cmd = MAP_CMD, JID=configFileDict["TRIM_WAIT"])
             #print(SLURM_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = MAP_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = wsbatch, slurm = slurmMappingCommand, log_dir = f"{bamDirectory}/log", uid = configFileDict["uid"], cmd = MAP_CMD)
             #print(SLURM_CMD)
         
         if dryRun:
@@ -110,6 +119,7 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
     MAP_JID_LIST = []
     configFileDict['mapping_log_files'] = []
     
+    
     pairend = configFileDict['pairend']
     STAR = configFileDict['star']
     ref_genome = configFileDict['reference_genome']
@@ -121,20 +131,28 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
 
     sjdbOverhang = int(readLength)-int(1)
     
+    referenceGenome = configFileDict['reference_genome']
+    Samtools = configFileDict['samtools']
+    
+    STARoptions = configFileDict['STARoptions']
+    
+    wsbatch = configFileDict["wsbatch"]
+    slurmMappingOptions = configFileDict['slurm_mapping']
+    
     for sample in FASTQ_PREFIX:                                                        
 
 
         if pairend == "0" :
-            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = referenceGenome, annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = STARoptions, fastq_dir = fastqDir, samtools = Samtools)
         else:
-            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = referenceGenome, annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = STARoptions, fastq_dir = fastqDir, samtools = Samtools)
    
         
         if '1' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = "{}/log".format(configFileDict['bam_dir']), uid = configFileDict["uid"], cmd = STAR_CMD, JID=configFileDict["TRIM_WAIT"])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = wsbatch, slurm = slurmMappingOptions, log_dir = "{}/log".format(bamDir), uid = configFileDict["uid"], cmd = STAR_CMD, JID=configFileDict["TRIM_WAIT"])
             #print(SLURM_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_mapping"], log_dir = f"{configFileDict['bam_dir']}/log", uid = configFileDict["uid"], cmd = STAR_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = wsbatch, slurm = slurmMappingOptions, log_dir = f"{bamDir}/log", uid = configFileDict["uid"], cmd = STAR_CMD)
             #print(SLURM_CMD)
         
         if dryRun:
@@ -142,7 +160,7 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
         else:
             out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
             MAP_JID_LIST.append(catchJID(out))
-            configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bam_dir"]),configFileDict['uid'],out))
+            configFileDict['mapping_log_files'].append(getSlurmLog("{}/log".format(bamDir),configFileDict['uid'],out))
     
     if dryRun:
         return "dryRun"
