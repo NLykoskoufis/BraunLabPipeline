@@ -21,14 +21,22 @@ def submitTrimming(configFileDict, FASTQ_PREFIX, dryRun=False):
 
     Returns:
         [str]: comma separated string containing slurm job IDs for wait condition
-    """    
+    """
+    
+    # Define variable here instead of in loop
+    cutadapt = configFileDict['cutadapt']
+    parameters = configFileDict['trim_reads']
+    trimmedFastqDirectory = configFileDict['trimmed_fastq_dir']
+    fastqDirectory = configFileDict['fastq_dir']
+    
+    
     TRIM_JID_LIST = []
     for file in FASTQ_PREFIX:
         #print(file)
         if configFileDict['pairend'] == "1":
-            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}*_R1_001.fastq.gz {fastq_dir}/{file}*_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
+            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_R2_001.fastq.gz {fastq_dir}/{file}*_R1_001.fastq.gz {fastq_dir}/{file}*_R2_001.fastq.gz".format(bin= cutadapt, parameters= parameters, file=file, trimmed_dir = trimmedFastqDirectory, fastq_dir = fastqDirectory)
         else: 
-            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz  {fastq_dir}/{file}*_R1_001.fastq.gz ".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
+            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_R1_001.fastq.gz  {fastq_dir}/{file}*_R1_001.fastq.gz ".format(bin = cutadapt, parameters= parameters, file=file, trimmed_dir = trimmedFastqDirectory, fastq_dir = fastqDirectory)
             
         SLURM_CMD = "{wsbatch} {slurm} -o {trimmed_log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_trim"], trimmed_log_dir = "{}/log".format(configFileDict["trimmed_fastq_dir"]), uid = configFileDict["uid"], cmd = TRIM_CMD)
         
