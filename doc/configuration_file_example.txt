@@ -44,6 +44,10 @@ technology,ATACseq
 #cutadapt -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 -o testFile_R1_001.trim.fastq.gz -p testFile_R2_001.trim.fastq.gz testFile_R1_001.fastq.gz testFile_R2_001.fastq.gz
 #If you want to modify the parameters used, you can comment the line below, and add what you want. 
 trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 
+
+### If RNAseq technology with 3'mRNA Colibri.
+#CUTADAPT -m 20 -O 20 -n 2 -a \"polyA=A{20}\" -a \"QUALITY=G{20}\" ${INPUT_FASTQ} | CUTADAPT -m 20 --nextseq-trim=10 -a \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" - | CUTADAPT -m 20 -O 20 -g \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" --discard-trimmed -o ${OUTPUT_FASTQ} -
+trim_reads,-m 20 -O 20 -n 2 -a \"polyA=A{20}\" -a \"QUALITY=G{20}\";-m 20 --nextseq-trim=10 -a \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" -;-m 20 -O 20 -g \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" --discard-trimmed
 ###############################
 
 #### MAPPER #### 
@@ -54,9 +58,15 @@ mapper,bowtie2
 
 
 #### STAR OPTIONS ####
-STARoptions, --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMunmapped Within --outSAMattributes All
+#STARoptions, --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMunmapped Within --outSAMattributes All
+#STARreadLength, 55
 
-STARreadLength, 55
+### STAR options if using Colibri 3'mRNA Kit
+#STAR --readFilesCommand zcat --genomeDir /srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.GRCm38.102_100bp-readLength --readFilesIn ${INPUT_FASTQ} --outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --outFileNamePrefix ${OUTPUTFILE}"
+
+STARoptions,--outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000
+
+
 ######################
 
 #### BOWTIE OPTIONS ####
@@ -104,7 +114,7 @@ quantificationSoftware,featureCounts
 #quantificationSoftware,QTLtools
 
 #quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
-quantOptions,-T 4 
+quantOptions,-T 4 -O
 #####################################
 
 

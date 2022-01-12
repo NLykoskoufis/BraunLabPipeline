@@ -533,7 +533,7 @@ with Progress() as progress:
             time.sleep(0.1)
 
 
-        if 'report' in task_list: 
+        if args.reportTask: 
             progress.update(task1, advance=1)
             if 'report' in task_list and len(task_list) == 1:
                 vrb.error("The report step is used only in case you run all the steps.")
