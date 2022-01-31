@@ -575,10 +575,10 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             
             fastq_dir = configFileDict['fastq_dir']
-            FASTQ_FILES = getFastqPrefix(fastq_dir)
-            #print(FASTQ_FILES)
+            FASTQ_FILES = getFastqFiles(fastq_dir)
+            FASTQ_PREFIX = getFastqPrefix(fastq_dir)
             configFileDict['trim_log_files'] = [] 
-            configFileDict['sample_prefix'] = FASTQ_FILES
+            configFileDict['sample_prefix'] = FASTQ_PREFIX
             TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES, args.dryRun)
             configFileDict['TRIM_WAIT'] = TRIM_WAIT
             #submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)

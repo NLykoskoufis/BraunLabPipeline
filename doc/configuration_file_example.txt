@@ -38,16 +38,22 @@ technology,ATACseq
 #technology,ChIPseq
 #technology,RNAseq
 
+# Which RNAseq kit are we using? 
+RNAkit,Colibri
+
 
 #### READ TRIMMING OPTIONS ####
 #Example of how a cutadapt commands looks like 
 #cutadapt -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 -o testFile_R1_001.trim.fastq.gz -p testFile_R2_001.trim.fastq.gz testFile_R1_001.fastq.gz testFile_R2_001.fastq.gz
 #If you want to modify the parameters used, you can comment the line below, and add what you want. 
-trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5 
+#trim_reads, -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTGACGCTGCCGACGA -m 20 -O 5
+
+
 
 ### If RNAseq technology with 3'mRNA Colibri.
 #CUTADAPT -m 20 -O 20 -n 2 -a \"polyA=A{20}\" -a \"QUALITY=G{20}\" ${INPUT_FASTQ} | CUTADAPT -m 20 --nextseq-trim=10 -a \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" - | CUTADAPT -m 20 -O 20 -g \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" --discard-trimmed -o ${OUTPUT_FASTQ} -
-trim_reads,-m 20 -O 20 -n 2 -a \"polyA=A{20}\" -a \"QUALITY=G{20}\";-m 20 --nextseq-trim=10 -a \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" -;-m 20 -O 20 -g \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" --discard-trimmed
+
+trim_reads, BIN -m 20 -O 20 -n 2 -a \"polyA=A{20}\" -a \"QUALITY=G{20}\" INPUT | BIN -m 20 --nextseq-trim=10 -a \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" - | BIN -m 20 -O 20 -g \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" --discard-trimmed -o OUTPUT -
 ###############################
 
 #### MAPPER #### 
@@ -114,7 +120,8 @@ quantificationSoftware,featureCounts
 #quantificationSoftware,QTLtools
 
 #quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
-quantOptions,-T 4 -O
+#quantOptions,-T 4 -O
+quantOptions,-t exon -g gene_id -O -T 4
 #####################################
 
 
