@@ -142,14 +142,17 @@ elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
         task_list = ['1','1.1','2','3','4','4.2','5','6','7','8','8.1'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
-    if 'all' in task_list: 
-        task_list = ['1.1', '2','4.2','5', '9']
+    if 'all' in task_list:
+        if configFileDict['RNAkit'] == "Colibri":
+            task_list = ['1','1.1', '2', '3','4.2','5', '9']
+        else:
+            task_list = ['1.1', '2','4.2','5', '9']
     if '3' in task_list or '4' in task_list: 
-        vrb.warning("WARNING!!! It is not recommended to remove duplicated reads for RNAseq experiments as you may kill your signal for very highly expressed genes.")
+        vrb.warning("WARNING!!! You will mark PCR duplicates. However, for RNAseq, be careful as it is not recommended to remove duplicated reads. ")
     if '8' in task_list:
         vrb.error("ERROR. You cannot call peaks from RNAseq data.")
     if '5' in task_list or '6' in task_list or '7' in task_list:
-        vrb.warning("WARNING! These are not RNAseq data specific steps.")
+        vrb.warning("WARNING! These are not RNAseq data specific steps. Run them at your known risk.")
 else: 
     vrb.error("ERROR. The pipeline can only process ATACseq, ChIPseq or RNAseq data. PLease specify one of them in the configuration file")
 
@@ -575,10 +578,10 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             
             fastq_dir = configFileDict['fastq_dir']
-            FASTQ_FILES = getFastqFiles(fastq_dir)
-            FASTQ_PREFIX = getFastqPrefix(fastq_dir)
+            FASTQ_FILES = getFastqPrefix(fastq_dir)
+            #print(FASTQ_FILES)
             configFileDict['trim_log_files'] = [] 
-            configFileDict['sample_prefix'] = FASTQ_PREFIX
+            configFileDict['sample_prefix'] = FASTQ_FILES
             TRIM_WAIT = submitTrimming(configFileDict, FASTQ_FILES, args.dryRun)
             configFileDict['TRIM_WAIT'] = TRIM_WAIT
             #submitJobCheck(configFileDict,'trim_log_files',TRIM_WAIT)
@@ -645,7 +648,7 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             configFileDict['pcr_log_files'] = []
             if '1' in task_list or '2' in task_list:
-                BAM_FILES = ["{}/{}.sortedByCoord.bam".format(configFileDict['bam_dir'],i) for i in configFileDict['sample_prefix']]
+                BAM_FILES = ["{}/{}.sortedByCoord.out.bam".format(configFileDict['bam_dir'],i) for i in configFileDict['sample_prefix']]
                 
                 PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES, args.dryRun)
                 configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
@@ -895,13 +898,13 @@ with Progress() as progress:
             vrb.boldBullet("Submitting exon/gene quantification\n")
             progress.update(task1, advance=1)
             configFileDict['quant_log_files'] = []
-            if '2' not in task_list:
+            if '3' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
                 QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['QUANT_WAIT'] = QUANT_WAIT
                 
             else:
-                BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 if configFileDict['quantificationSoftware'] == "QTLtools":
                     QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 elif configFileDict['quantificationSoftware'] == "featureCounts":

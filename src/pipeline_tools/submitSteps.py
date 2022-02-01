@@ -129,11 +129,11 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
 
         if pairend == "0" :
             if configFileDict['RNAkit'] == "Colibri":
-                STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz; {samtools} sort {outFileNamePrefix}Aligned.out.sam -O BAM -o {outFileNamePrefix}Aligned.sortedByCoord.out.bam; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
+                STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz; {samtools} sort {outFileNamePrefix}Aligned.out.sam -O BAM -o {outFileNamePrefix}sortedByCoord.out.bam; {samtools} index {outFileNamePrefix}sortedByCoord.out.bam; rm {outFileNamePrefix}Aligned.out.sam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
             else:    
-                STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
+                STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
         else:
-            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.out.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
+            STAR_CMD = "{STAR} {parameters} --outFileNamePrefix {outFileNamePrefix} --genomeDir {STARgenomeDir} --readFilesIn {fastq_dir}/{smp}*_R1_001.fastq.gz {fastq_dir}/{smp}*_R2_001.fastq.gz --sjdbGTFfile {annotation} --sjdbOverhang {sjdbOverhand}; {samtools} index {outFileNamePrefix}Aligned.sortedByCoord.bam".format(STAR = STAR, outFileNamePrefix = f"{bamDir}/{sample}.", STARgenomeDir = configFileDict['reference_genome'], annotation = annotation, sjdbOverhand = str(sjdbOverhang), smp = sample, parameters = configFileDict['STARoptions'], fastq_dir = fastqDir, samtools = configFileDict['samtools'])
    
         
         if '1' in configFileDict['task_list']: 
@@ -734,7 +734,7 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, dryRun=Fals
         if '2' in configFileDict['task_list'] : 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'], cmd = QUAN_CMD)
         
         if dryRun:
             print(SLURM_CMD)
@@ -748,8 +748,7 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, dryRun=Fals
     
     slurm_cmd = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = ",".join(QUANT_JID_LIST), cmd = COMBINEQUAN) 
     
-    if dryRun:
-        print(SLURM_CMD)    
+    if dryRun:    
         return "dryRun"
     else:
         out = subprocess.check_output(slurm_cmd, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)

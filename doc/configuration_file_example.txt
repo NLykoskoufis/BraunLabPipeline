@@ -70,7 +70,7 @@ mapper,bowtie2
 ### STAR options if using Colibri 3'mRNA Kit
 #STAR --readFilesCommand zcat --genomeDir /srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.GRCm38.102_100bp-readLength --readFilesIn ${INPUT_FASTQ} --outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --outFileNamePrefix ${OUTPUTFILE}"
 
-STARoptions,--outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000
+STARoptions,--readFilesCommand zcat --runThreadN 8 --outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000
 
 
 ######################
