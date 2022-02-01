@@ -904,7 +904,7 @@ with Progress() as progress:
                 configFileDict['QUANT_WAIT'] = QUANT_WAIT
                 
             else:
-                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']] if configFileDict['RNAkit'] != "Colibri" else ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
                 if configFileDict['quantificationSoftware'] == "QTLtools":
                     QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 elif configFileDict['quantificationSoftware'] == "featureCounts":
