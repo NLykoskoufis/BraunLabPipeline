@@ -1,5 +1,6 @@
 #!/usr/bin/env python3 
 from __future__ import print_function
+from distutils.command.config import config
 import subprocess
 import sys 
 import os
@@ -652,9 +653,8 @@ with Progress() as progress:
             vrb.boldBullet("Submitting PCR duplication detection using PICARD\n")
             progress.update(task1, advance=1)
             configFileDict['pcr_log_files'] = []
-            if '1' in task_list or '2' in task_list:
-                BAM_FILES = ["{}/{}.sortedByCoord.out.bam".format(configFileDict['bam_dir'],i) for i in configFileDict['sample_prefix']]
-                
+            if '2' in task_list:
+                BAM_FILES = ["{}/{}.Aligned.sortedByCoord.bam".format(configFileDict['bam_dir'],i) for i in configFileDict['sample_prefix']]
                 PCR_DUPLICATION_WAIT = submitPCRduplication(configFileDict,BAM_FILES, args.dryRun)
                 configFileDict['PCR_DUPLICATION_WAIT'] = PCR_DUPLICATION_WAIT
             else:        
@@ -737,7 +737,7 @@ with Progress() as progress:
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT + ',' + BAMQC_WAIT2
                 elif configFileDict['technology'] == "RNAseq":
                     
-                    BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     
                     BAMQC_WAIT = submitSamtoolsBamQC(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAMQC_WAIT'] = BAMQC_WAIT
@@ -766,7 +766,7 @@ with Progress() as progress:
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
                 else:
-                    BAM_FILES = ["{}/{}.Aligned.sortedByCoord.out.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
             
