@@ -82,10 +82,11 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH, dryRun=False):
     """  
     MAP_JID_LIST = []
     configFileDict['mapping_log_files'] = []
+    
     for file in FASTQ_PREFIX:                                                        
-
         
         if configFileDict['pairend'] ==  "1": 
+            
             MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -1 {dir}/{file}*_R1_001.fastq.gz -2 {dir}/{file}*_R2_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam && {samtools} index {bam_dir}/{file}.sortedByCoord.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome'])
         else:
             MAP_CMD = "{mapper} {parameters} -x {REFSEQ} -U {dir}/{file}*_R1_001.fastq.gz | {samtools} view -b -h -o {bam_dir}/{file}.raw.bam && {samtools} sort -O BAM -o {bam_dir}/{file}.sortedByCoord.bam {bam_dir}/{file}.raw.bam && rm {bam_dir}/{file}.raw.bam && {samtools} index {bam_dir}/{file}.sortedByCoord.bam".format(mapper=configFileDict['bowtie2'], parameters=configFileDict['bowtie_parameters'],dir=FASTQ_PATH,file=file, samtools = configFileDict["samtools"], bam_dir=configFileDict['bam_dir'], REFSEQ=configFileDict['reference_genome']) 
@@ -112,7 +113,7 @@ def submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH, dryRun=False):
         return MAP_WAIT
 
 
-def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
+def submitMappingSTAR(configFileDict, FASTQ_PREFIX, FASTQ_PATH, dryRun=False):
     """[Submits jobs for Mapping using STAR]
 
     Args:
@@ -131,7 +132,7 @@ def submitMappingSTAR(configFileDict, FASTQ_PREFIX, dryRun=False):
     annotation = configFileDict['annotation']
     readLength = configFileDict['STARreadLength']
     bamDir = configFileDict['bam_dir']
-    fastqDir = configFileDict['trimmed_fastq_dir']
+    fastqDir = FASTQ_PATH
     logDir = bamDir + '/log/'
 
     sjdbOverhang = int(readLength)-int(1)

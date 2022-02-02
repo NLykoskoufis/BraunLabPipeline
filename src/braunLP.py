@@ -618,18 +618,23 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             configFileDict['mapping_log_files'] = []
             if '1' not in task_list:
-                FASTQ_PREFIX=getFastqPrefix(configFileDict['trimmed_fastq_dir'])
-                FASTQ_PATH=configFileDict['trimmed_fastq_dir']
+                FASTQ_PREFIX=getFastqPrefix(configFileDict['fastq_dir'])
+                FASTQ_PATH=configFileDict['fastq_dir']
                 configFileDict['sample_prefix'] = FASTQ_PREFIX # What if For trimming and mapping steps I created a list with all sample IDs in configFileDict so that I can just read it from there instead of creating variables all the time?? an just 
             else:
                 FASTQ_PREFIX=getFastqPrefix(configFileDict['fastq_dir'])
-                FASTQ_PATH=configFileDict['fastq_dir']
                 configFileDict['sample_prefix'] = FASTQ_PREFIX
-            
+                if configFileDict['technology'] == "ChIPseq" or configFileDict['technology'] == "ATACseq":
+                    FASTQ_PATH=configFileDict['trimmed_fastq_dir']                    
+                elif configFileDict['technology'] == "RNAseq" and configFileDict['RNAkit'] == "Colibri":
+                    FASTQ_PATH=configFileDict['trimmed_fastq_dir']
+                else: 
+                    FASTQ_PATH=configFileDict['fastq_dir']
+                    
             if configFileDict["mapper"] == "bowtie2":
                 MAP_WAIT = submitMappingBowtie(configFileDict, FASTQ_PREFIX, FASTQ_PATH, args.dryRun)
             elif configFileDict['mapper'] == "STAR":
-                MAP_WAIT = submitMappingSTAR(configFileDict, FASTQ_PREFIX, args.dryRun)    
+                MAP_WAIT = submitMappingSTAR(configFileDict, FASTQ_PREFIX, FASTQ_PATH,args.dryRun)    
             else: 
                 vrb.error("You need to specify a mapper")
             
