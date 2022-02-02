@@ -5,6 +5,7 @@ import subprocess
 import sys 
 import glob
 import os
+import re
 from pipeline_tools.slurmTools import catchJID
 from scripts.featureCountsTObed import combineCounts
 
@@ -24,15 +25,26 @@ def submitTrimming(configFileDict, FASTQ_PREFIX, dryRun=False):
         [str]: comma separated string containing slurm job IDs for wait condition
     """    
     TRIM_JID_LIST = []
+    
+    R1 = re.compile('''R1''')
+    R2 = re.compile('''R2''')
     for file in FASTQ_PREFIX:
-
+        # GET FASTQ FILES # 
+        fastq_files = glob.glob("{path}/{file}*.fastq.gz".format(path = configFileDict['fastq_dir'], file = file))
         if configFileDict['pairend'] == "1":
-            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{file}.trim_S1_L001_R1_001.fastq.gz -p {trimmed_dir}/{file}.trim_S1_L001_R2_001.fastq.gz {fastq_dir}/{file}*_R1_001.fastq.gz {fastq_dir}/{file}*_R2_001.fastq.gz".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], file=file, trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
+            fastq_pair1 = [os.path.basename(i) for i in fastq_files if R1.search(i)][0]
+            fastq_pair2 = [os.path.basename(i) for i in fastq_files if R2.search(i)][0]
+            output_pair1 = re.sub("_S",".trimmed_S",fastq_pair1)
+            output_pair2 = re.sub("_S",".trimmed_S",fastq_pair2)
+            TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{output1} -p {trimmed_dir}/{output2} {fastq_dir}/{pair1} {fastq_dir}/{pair2}".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], pair1 = fastq_pair1, pair2 = fastq_pair2, output1 = output_pair1, output2 = output_pair2,  trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
         else:
             if configFileDict['RNAkit'] == "Colibri":
+                fastq_pair1 = [os.path.basename(i) for i in fastq_files if R1.search(i)][0]
+                output_pair1 = re.sub("_S",".trimmed_S",fastq_pair1)
+                
                 BIN = configFileDict['cutadapt']
-                INPUT = "{fastq_dir}/{file}*_R1_001.fastq.gz".format(fastq_dir = configFileDict['fastq_dir'], file = file)
-                OUTPUT = "{trimmed_dir}/{file}.trim_S1_L001_R1_001.fastq.gz".format(trimmed_dir = configFileDict["trimmed_fastq_dir"], file = file)
+                INPUT = "{fastq_dir}/{pair1}".format(fastq_dir = configFileDict['fastq_dir'], pair1 = fastq_pair1)
+                OUTPUT = "{trimmed_dir}/{output1}".format(trimmed_dir = configFileDict["trimmed_fastq_dir"], output1 = output_pair1)
                 trimReadsCommand = configFileDict['trim_reads']
                 trimReadsCommand = trimReadsCommand.replace("BIN",configFileDict['cutadapt']).replace("INPUT",INPUT).replace("OUTPUT",OUTPUT)
                 TRIM_CMD = trimReadsCommand
@@ -731,8 +743,8 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, dryRun=Fals
         
         QUAN_CMD = "{bin} {quantOptions} -a {GTF} -o {outputFile}.raw.gene.count.txt {bamFile}".format(bin = configFileDict['featureCounts'], GTF = configFileDict['annotation'], outputFile = outputFile, bamFile = bam, quantOptions = configFileDict['quantOptions'])
         
-        if '2' in configFileDict['task_list'] : 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
+        if '3' in configFileDict['task_list'] : 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['PCR_DUPLICATION_WAIT'], cmd = QUAN_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'], cmd = QUAN_CMD)
         
