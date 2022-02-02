@@ -38,7 +38,7 @@ def submitTrimming(configFileDict, FASTQ_PREFIX, dryRun=False):
             output_pair2 = re.sub("_S",".trimmed_S",fastq_pair2)
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{output1} -p {trimmed_dir}/{output2} {fastq_dir}/{pair1} {fastq_dir}/{pair2}".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], pair1 = fastq_pair1, pair2 = fastq_pair2, output1 = output_pair1, output2 = output_pair2,  trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
         else:
-            if configFileDict['RNAkit'] == "Colibri":
+            if configFileDict['RNAkit'] == "Colibri" and configFileDict['technology'] == "RNAseq":
                 fastq_pair1 = [os.path.basename(i) for i in fastq_files if R1.search(i)][0]
                 output_pair1 = re.sub("_S",".trimmed_S",fastq_pair1)
                 
