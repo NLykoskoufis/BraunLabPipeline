@@ -756,7 +756,7 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, dryRun=Fals
             configFileDict['quant_log_files'].append(getSlurmLog("{}/log".format(configFileDict["quantification_dir"]),configFileDict['uid'],out))
        
     ### SUBMIT COMBINE QUANTIFICATIONS TO MULTI-SAMPLE BED FILE
-    COMBINEQUAN = "python3 {combineQuan} --file-list {outputDir}/*.txt --outputFile Allsamples.chrALL.raw.gene.count.bed --gtf-file {gtfFile}".format(combineQuan = configFileDict['combineQuanScript'], outputDir = OUTPUT_DIR, gtfFile = configFileDict['annotation'])
+    COMBINEQUAN = "python3 {combineQuan} --file-list {outputDir}/*.txt --outputFile {outputDir}/Allsamples.chrALL.raw.gene.count.bed --gtf-file {gtfFile}".format(combineQuan = configFileDict['combineQuanScript'], outputDir = OUTPUT_DIR, gtfFile = configFileDict['annotation'])
     
     slurm_cmd = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = ",".join(QUANT_JID_LIST), cmd = COMBINEQUAN) 
     
