@@ -772,7 +772,6 @@ with Progress() as progress:
             
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
             task_dico['5'] = "BAM2BW_WAIT"
-
             task_log_dico['5'] = 'bw_log_files'
             
 
