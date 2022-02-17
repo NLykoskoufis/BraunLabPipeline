@@ -1,0 +1,138 @@
+#Author: Nikolaos M.R. Lykoskoufis
+#8th of July 2021
+#Default configuration for the rnaseq pipeline 
+
+#This file is a comma separated value file, lines starting with "#" are comments not readed by the pipeline.
+#Fist words are key words that must not be changed.
+
+#Email of the data managers
+#This option is a list of email to which report will be sent during the data processing
+#The reports are sent at different steps of the pipeline and keep user informed of the processus
+contact_email,nikolaos.lykoskoufis@unige.ch 
+
+
+#### NEEDED FILES PATH #####
+
+### REFERENCE GENOMES ####
+#reference_genome,/srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.GRCm38.102_55bp-readLength
+#reference_genome,/srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.M10_55bp-readLength
+#reference_genome,/srv/beegfs/scratch/shares/brauns_lab/data/indexes/Bowtie2/mm10/mm10
+
+
+
+
+#### ANNOTATION FILES #####
+#annotation, /srv/beegfs/scratch/groups/funpopgen/data/annotations/gencode.v19.annotation.nochr.gtf
+annotation,/srv/beegfs/scratch/shares/brauns_lab/data/annotations/mus_musculus/Mus_musculus.GRCm38.102.modified.txt
+
+###########################
+
+#### PAIRED-END or NOT ####
+#Are reads Pair-end read: 1 if they are pair-end, 0 if they are single-end
+pairend,1
+############################
+
+# Are you mapping ATAC-seq, ChIP-seq or RNAseq data? 
+technology,RNAseq
+
+# Which RNAseq kit are we using? 
+RNAkit,Colibri
+
+
+#### READ TRIMMING OPTIONS ####
+# Trimming of reads is only used if you use the Colibri library kit!!!!
+trim_reads, BIN -m 20 -O 20 -n 2 -a \"polyA=A{20}\" -a \"QUALITY=G{20}\" INPUT | BIN -m 20 --nextseq-trim=10 -a \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" - | BIN -m 20 -O 20 -g \"truseq=A{18}AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC\" --discard-trimmed -o OUTPUT -
+###############################
+
+#### MAPPER #### 
+#Choose your mapper (possible options: STAR, bwa, bowtie,HiSat2, etc...)
+mapper,STAR 
+################
+
+
+#### STAR OPTIONS ####
+#STARoptions, --readFilesCommand zcat --runThreadN 8 --outSAMtype BAM SortedByCoordinate --outSJfilterReads Unique --twopassMode Basic --outSAMmultNmax 1 --outSAMunmapped Within --outSAMattributes All
+#STARreadLength, 55
+
+### STAR options if using Colibri 3'mRNA Kit
+#STAR --readFilesCommand zcat --genomeDir /srv/beegfs/scratch/shares/brauns_lab/data/indexes/STAR/GRCm38_gencode.GRCm38.102_100bp-readLength --readFilesIn ${INPUT_FASTQ} --outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --outFileNamePrefix ${OUTPUTFILE}"
+
+STARoptions,--readFilesCommand zcat --runThreadN 8 --outFilterMultimapNmax 20 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.6 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000
+
+
+
+#### PCR DUPLICATION IDENTIFICATION ####
+#PCR duplicates. This is step XX. If you have selected it, the following command will be executed. No parameters or anything to add here. This command does not change.
+#Example: java -Xmx8g -jar $PICARD MarkDuplicates I=${file}.QualTrimNoMt.bam O=${file}.QualTrimNoMt.Picard.bam M=${file}.metrix
+
+
+##### BAM2BW #####
+#Deeptools to create normalized .bw files 
+#bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max --extendReads 200
+bam2bw, --binSize 10 --normalizeUsing RPKM --ignoreForNormalization chrM ChrUn ChrRandom --numberOfProcessors max
+###################
+
+
+
+#### EXON QUANTIFICATION OPTIONS ####
+quantificationSoftware,featureCounts
+#quantificationSoftware,QTLtools
+
+#quantOptions, --filter-mapping-quality 255 --filter-mismatch-total 8 --rpkm
+#quantOptions,-T 4 -O
+quantOptions,-t exon -g gene_id -O -T 4
+#####################################
+
+
+#######################################################################################################
+#                                         SLURM SUBMIT                                                #
+#######################################################################################################
+slurm_trim, --time=04:00:00 --mem=10G --partition=shared-cpu
+slurm_mapping, --time=12:00:00 --mem=40G --partition=shared-cpu -n 1 -N 1 -c 8
+slurm_peakCalling, --time=12:00:00 --mem=20G --partition=shared-cpu
+slurm_general, --time=12:00:00 --mem=20G --partition=shared-cpu
+slurm_filter_bam, --time=12:00:00 --mem=10G --partition=shared-cpu -n 1 -N 1 -c 4
+
+#######################################################################################################
+#                                         SOFTWARE PATH                                               #
+#######################################################################################################
+#This part, in coma separated value format, is used by main.py to set executable directory
+#In each lane, the first word is a keyword that should not be changed, the second part after
+#the comma is the path to the corresponding executable.
+
+#FastQC 
+FastQC,/srv/beegfs/scratch/shares/brauns_lab/Tools/FastQC/fastqc
+
+#path to python3
+python,/opt/ebsofts/Python/3.7.4-GCCcore-8.3.0/bin/python3
+
+#Bedtools 
+bedtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/bedtools2/bin/bedtools
+
+#Path to bowtie2
+bowtie2,/srv/beegfs/scratch/shares/brauns_lab/Tools/bowtie2-2.4.4/bowtie2
+
+#Path to STAR
+star,/srv/beegfs/scratch/shares/brauns_lab/Tools/STAR-2.7.5c/bin/Linux_x86_64_static/STAR
+
+#Path to samtools
+samtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/samtools
+
+#QTLtools
+QTLtools,/srv/beegfs/scratch/shares/brauns_lab/Tools/qtltools/bin/QTLtools
+
+#Rscript
+Rscript,/opt/ebsofts/R/3.6.2-foss-2019b/bin/Rscript
+
+#PICARD-Tools
+picard,java -Xmx8g -jar /srv/beegfs/scratch/shares/brauns_lab/bin/picard.jar
+
+#WSBATCH
+wsbatch,/srv/beegfs/scratch/shares/brauns_lab/bin/wsbatch
+
+#bedClip
+bedClip,/srv/beegfs/scratch/shares/brauns_lab/bin/bedClip
+
+#plotBam 
+plotBam,/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/misc/plot-bamstats
+
