@@ -145,3 +145,9 @@ bedClip,/srv/beegfs/scratch/shares/brauns_lab/bin/bedClip
 #plotBam 
 plotBam,/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/misc/plot-bamstats
 
+#bigWigMerge,
+bigWigMerge,/srv/beegfs/scratch/shares/brauns_lab/bin/bigWigMerge
+
+#bedGraphToBigWig
+bedGraphToBigWig,/srv/beegfs/scratch/shares/brauns_lab/bin/bedGraphToBigWig
+
