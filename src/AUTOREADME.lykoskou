@@ -54,3 +54,37 @@ python3 main.py --help
 cd ../Tools/BraunLabPipeline/src
 #[2021-10-21 04:08:05 PM]
 chmod 755 braunLP.py
+#[2022-02-18 10:15:51 AM]
+1437 cd src
+#[2022-02-18 10:16:02 AM]
+1438 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupChecking.py
+#[2022-02-18 10:16:16 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:20:26 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:20:34 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:21:42 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:22:19 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:22:31 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:22:58 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:24:44 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:25:00 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:25:15 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:25:40 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:25:49 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:26:02 AM]
+1439 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-02-18 10:29:14 AM]
+1440 python3 
+#[2022-02-18 10:29:17 AM]
+1441 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py

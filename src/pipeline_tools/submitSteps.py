@@ -13,6 +13,8 @@ pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 sys.path.append(pipeline_tools_path)
 from slurmTools import *
+from groupCheck import * 
+
 
 def submitTrimming(configFileDict, FASTQ_PREFIX, dryRun=False):
     """Function that submits slurm jobs for trimming reads.
@@ -38,7 +40,7 @@ def submitTrimming(configFileDict, FASTQ_PREFIX, dryRun=False):
             output_pair2 = re.sub("_S",".trimmed_S",fastq_pair2)
             TRIM_CMD = "{bin} {parameters} -o {trimmed_dir}/{output1} -p {trimmed_dir}/{output2} {fastq_dir}/{pair1} {fastq_dir}/{pair2}".format(bin=configFileDict["cutadapt"], parameters=configFileDict["trim_reads"], pair1 = fastq_pair1, pair2 = fastq_pair2, output1 = output_pair1, output2 = output_pair2,  trimmed_dir = configFileDict["trimmed_fastq_dir"], fastq_dir=configFileDict['fastq_dir'])
         else:
-            if configFileDict['RNAkit'] == "Colibri" and configFileDict['technology'] == "RNAseq":
+            if configFileDict.get("RNAkit") == "Colibri" and configFileDict['technology'] == "RNAseq":
                 fastq_pair1 = [os.path.basename(i) for i in fastq_files if R1.search(i)][0]
                 output_pair1 = re.sub("_S",".trimmed_S",fastq_pair1)
                 
@@ -291,7 +293,45 @@ def submitBAM2BW(configFileDict, BAM_FILES, dryRun=False):
         BAM2BW_WAIT = ",".join(BW_JID_LIST)
         del BW_JID_LIST
         return BAM2BW_WAIT
-            
+
+def submitMergingBW(configFileDict, BW_FILES,dryRun=False):
+    """[Submits jobs for merging of bw files into groups]
+
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        BW_FILES [str]: Absolute path where BW FILES are and where to write them. 
+
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """
+    BW_JID_LIST = []
+    OUTPUT_DIR = configFileDict['bw_dir']
+    
+    groups = configFileDict.get("groups")
+    groupDico = createGroups(groups, BW_FILES)
+    
+    genomeSizeFile = configFileDict['genomeFileSize']
+    for group,files in groupDico.items():
+        output1 = f"{OUTPUT_DIR}/{group}.merged.bdg"
+        output2 = f"{OUTPUT_DIR}/{group}.merged.sorted.bdg"
+        output3 = f"{OUTPUT_DIR}/{group}.merged.bw"
+        cmd = "{bwm} {files} {output1}; LC_COLLATE=C sort -k1,1 -k2,2n {output1} > {output2}; {bdgTobw} {output2} {genomeFileSize} {output3}; rm {output1} {output2}".format(bwm = configFileDict['bigWigMerge'], files = " ".join(files), output1 = output1, output2= output2, output3=output3, genomeFileSize = genomeSizeFile, bdgTobw = configFileDict['bedGraphToBigWig'])
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = cmd, JID=configFileDict['BAM2BW_WAIT'])
+        
+        if dryRun:
+            print(SLURM_CMD)
+        else: 
+            out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+            BW_JID_LIST.append(catchJID(out))
+            configFileDict['bw_log_files'].append(getSlurmLog("{}/log".format(configFileDict["bw_dir"]),configFileDict['uid'],out))
+      
+    if dryRun:
+        return "dryRun"
+    else:    
+        BAM2BW_WAIT = ",".join(BW_JID_LIST)
+        del BW_JID_LIST
+        return BAM2BW_WAIT  
+    
         
 def submitBAM2BED(configFileDict, BAM_FILES, dryRun=False):
     """[Submits jobs for removal of PCR duplicated reads]

@@ -13,6 +13,7 @@ import glob
 from datetime import datetime
 import json
 from rich.progress import Progress
+from pipeline_tools.submitSteps import submitMergingBW
 
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
@@ -28,7 +29,7 @@ from slurmTools import *
 from dirCheck import * 
 from submitSteps import *
 from verbose import verbose as vrb
-
+from groupCheck import *
 
 # ===========================================================================================================
 DESC_COMMENT = "BraunLabPipeline"
@@ -221,6 +222,15 @@ if args.bigwig_dir:
 if args.eq_dir: 
     print(f"||    * {bcolors.BOLD}quantification dir{bcolors.ENDC}: [{args.eq_dir}]")
 print("||")
+if configFileDict.get("groups") != None:
+    groups = configFileDict.get("groups").split("|")
+    groupsOK = True
+    print(f"||    * {bcolors.BOLD}Groups for merged bigwig{bcolors.ENDC}: {groups}")
+    print("f||    * Checking that groups exists...")
+    groupCheck(groups, args.fastq_dir)
+else:
+    groupCheck = False
+
 print(f"//========================================================================\\\\")
 
 # ===========================================================================================================
@@ -765,10 +775,17 @@ with Progress() as progress:
                     BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+                    BW_FILES = ["{}/{}.bw".format(configFileDict['bw_dir'], i) for i in configFileDict['sample_prefix']]
+                    MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
+                    configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
+                    
                 else:
                     BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
+                    BW_FILES = ["{}/{}.bw".format(configFileDict['bw_dir'], i) for i in configFileDict['sample_prefix']]
+                    MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
+                    configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
             
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
             task_dico['5'] = "BAM2BW_WAIT"
