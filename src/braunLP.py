@@ -858,7 +858,7 @@ with Progress() as progress:
                     FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
                     SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
-                    BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
+                    BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     if len(BED_FILES) != len(SAMPLE_BED):
                         vrb.error("Samples and Inputs files do not match!")
                         
@@ -868,8 +868,10 @@ with Progress() as progress:
                     FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
+                    #print(INPUTS)
                     SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
-                    BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
+                    #print(SAMPLE_BED)
+                    BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     #print(BED_FILES)
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
