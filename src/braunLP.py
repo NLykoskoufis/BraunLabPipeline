@@ -779,13 +779,13 @@ with Progress() as progress:
                     MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
                     configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
                     
-                else:
+                else: # if not ATAC or ChIP then RNA ==> Do not merge bigwigs for RNA per group.
                     BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
-                    BW_FILES = ["{}/{}.bw".format(configFileDict['bw_dir'], i) for i in configFileDict['sample_prefix']]
-                    MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
-                    configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
+                    #BW_FILES = ["{}/{}.bw".format(configFileDict['bw_dir'], i) for i in configFileDict['sample_prefix']]
+                    #MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
+                    #configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
             
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
             task_dico['5'] = "BAM2BW_WAIT"

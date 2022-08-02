@@ -294,7 +294,7 @@ def submitBAM2BW(configFileDict, BAM_FILES, dryRun=False):
         del BW_JID_LIST
         return BAM2BW_WAIT
 
-def submitMergingBW(configFileDict, BW_FILES,dryRun=False):
+def submitMergingBW_byGroup(configFileDict, BW_FILES,dryRun=False):
     """[Submits jobs for merging of bw files into groups]
 
     Args:
@@ -332,6 +332,7 @@ def submitMergingBW(configFileDict, BW_FILES,dryRun=False):
         del BW_JID_LIST
         return BAM2BW_WAIT  
     
+
         
 def submitBAM2BED(configFileDict, BAM_FILES, dryRun=False):
     """[Submits jobs for removal of PCR duplicated reads]
