@@ -492,9 +492,9 @@ def submitChIPseqPeakCalling(configFileDict,BED_FILES, dryRun=False):
 
 
 
-def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun=False):
-    """[Submits jobs peak2Counts]
-
+def submitPeak2Counts_DEPRECATED(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun=False):
+    """[Submits jobs peak2Counts DEPRECATED]
+        
     Args:
         configFileDict ([dict]): [configuration file dictionary]
         NARROWPEAK_FILES [str]: Absolute path where BAM FILES are and where to write them. 
@@ -539,6 +539,56 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun
         del PEAK_CALLING_JID_LIST
         return PEAK_CALLING_WAIT
 
+
+def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun=False):
+    """[Submits jobs peak2Counts DEPRECATED]
+        
+    Args:
+        configFileDict ([dict]): [configuration file dictionary]
+        NARROWPEAK_FILES [str]: Absolute path where BAM FILES are and where to write them. 
+
+    Returns:
+        [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
+    """
+    
+    OUTPUT_DIR = configFileDict['peakCounts_dir']
+    GTF_FILE = f"{OUTPUT_DIR}/merged_peaks_ALLsamples.gtf"
+    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed > {gtf}".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], extendedBedFiles = " ".join(EXTENDED_BED_FILES), counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
+    
+    peak_cmd = []
+    for bed in EXTENDED_BED_FILES: 
+        outputFile = OUTPUT_DIR + "/" + os.path.basename(bed).replace("extendedReads.bed", "count")
+        #peak_cmd.append("{bedtools} intersect -a {outputDir}/merged_peaks_ALLsamples.bed -b {bed} -c > {outputFile}".format(bedtools = configFileDict['bedtools'], outputDir = OUTPUT_DIR, bed = bed, outputFile=outputFile))
+        peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bed))
+    
+    
+    COMBINECOUNTS2BED_CMD = "python3 {combineQuanScript} --file-list {input_dir}/*.count --outputFile {input_dir}/AllSamples_chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
+    
+    CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd) + " && " + COMBINECOUNTS2BED_CMD
+    
+    wait_condition = ""
+     
+    if '8' in configFileDict["task_list"] and '7' in configFileDict["task_list"]: 
+        wait_condition = configFileDict['PEAK_CALLING_WAIT'] + "," + configFileDict['EXT_BED_WAIT']
+    
+    if '8' not in configFileDict["task_list"] and '7' not in configFileDict["task_list"]:
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs)
+    else:
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs, JID=wait_condition)
+    #print(SLURM_CMD)
+    if dryRun:
+        print(SLURM_CMD)
+    else:
+        out = subprocess.check_output(SLURM_CMD, shell=True, universal_newlines= True, stderr=subprocess.STDOUT)
+        PEAK_CALLING_JID_LIST = catchJID(out)
+        configFileDict['peak2Count_log_files'].append(getSlurmLog("{}/log".format(configFileDict["peakCounts_dir"]),configFileDict['uid'],out))
+    
+    if dryRun:
+        return "dryRun"
+    else:
+        PEAK_CALLING_WAIT = PEAK_CALLING_JID_LIST
+        del PEAK_CALLING_JID_LIST
+        return PEAK_CALLING_WAIT
 
 def submitJobCheck(configFileDict, log_key, wait_key, dryRun=False):
     log_files = configFileDict[log_key]
