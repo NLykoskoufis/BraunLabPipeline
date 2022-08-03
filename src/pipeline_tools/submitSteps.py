@@ -553,7 +553,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     
     OUTPUT_DIR = configFileDict['peakCounts_dir']
     GTF_FILE = f"{OUTPUT_DIR}/merged_peaks_ALLsamples.gtf"
-    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf}".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
+    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf} && rm {outputDir}/ALLsamples_peaks.bed {outputDir}/ALLsamples_peaks.bed".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
     
     peak_cmd = []
     for bamFile in BAM_FILES : 
