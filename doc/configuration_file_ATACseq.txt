@@ -90,7 +90,8 @@ extend_reads,150
 
 #### Peak calling ####
 #Example: macs2 callpeak -t ${file}.NoDup.Ext${extension}.bed --format BED --nomodel -g mm -n ${file} -B --outdir ${file}_MACS
-peak_calling,--format BED --nomodel -g mm -B 
+#peak_calling,--format BED --nomodel -g mm -B 
+peak_calling, --format BAMPE --call-summits -p 0.01 --shift -75 --extsize 150 --keep-dup all -B
 #######################
 
 #######################################################################################################

@@ -411,26 +411,26 @@ def submitExtendReads(configFileDict,BED_FILES, dryRun=False):
         return EXT_BED_WAIT
 
 
-def submitPeakCalling(configFileDict,BED_FILES, dryRun=False):
+def submitPeakCalling(configFileDict,BAM_FILES, dryRun=False):
     """[Submits jobs peak calling]
 
     Args:
         configFileDict ([dict]): [configuration file dictionary]
-        BED_FILES [str]: Absolute path where BAM FILES are and where to write them. 
+        BAM_FILES [str]: Absolute path where BAM FILES are and where to write them. 
 
     Returns:
         [str]: [Returns the slurm Job IDs so that the jobs of the next step can wait until mapping has finished]
     """
     PEAK_CALLING_JID_LIST = []
     OUTPUT_DIR = configFileDict['peaks_dir']
-    for bam in BED_FILES:
+    for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.MACS".format(OUTPUT_DIR, input_file)
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=bam, output=OUTPUT_FILE, prefix=input_file)
         
-        if '6' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
+        if '4' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
         
@@ -449,7 +449,7 @@ def submitPeakCalling(configFileDict,BED_FILES, dryRun=False):
         return PEAK_CALLING_WAIT
 
 
-def submitChIPseqPeakCalling(configFileDict,BED_FILES, dryRun=False):
+def submitChIPseqPeakCalling(configFileDict,BAM_FILES, dryRun=False):
     """[Submits jobs peak calling]
 
     Args:
@@ -462,7 +462,7 @@ def submitChIPseqPeakCalling(configFileDict,BED_FILES, dryRun=False):
     PEAK_CALLING_JID_LIST = []
     OUTPUT_DIR = configFileDict['peaks_dir']
     
-    for file in BED_FILES:
+    for file in BAM_FILES:
         sample = file[0]
         inputs = file[1]
         
@@ -471,8 +471,8 @@ def submitChIPseqPeakCalling(configFileDict,BED_FILES, dryRun=False):
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {sample} -c {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=inputs, sample = sample, output=OUTPUT_FILE, prefix=input_file)
         #print(PEAKCALL_CMD)
-        if '6' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['EXT_BED_WAIT'])
+        if '4' in configFileDict['task_list']: 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
         
@@ -569,7 +569,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     wait_condition = ""
      
     if '8' in configFileDict["task_list"] and '7' in configFileDict["task_list"]: 
-        wait_condition = configFileDict['PEAK_CALLING_WAIT'] + "," + configFileDict['EXT_BED_WAIT']
+        wait_condition = configFileDict['PEAK_CALLING_WAIT']
     
     if '8' not in configFileDict["task_list"] and '7' not in configFileDict["task_list"]:
         SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs)
