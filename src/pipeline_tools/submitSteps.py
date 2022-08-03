@@ -553,7 +553,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     
     OUTPUT_DIR = configFileDict['peakCounts_dir']
     GTF_FILE = f"{OUTPUT_DIR}/merged_peaks_ALLsamples.gtf"
-    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf} && rm {outputDir}/ALLsamples_peaks.bed {outputDir}/ALLsamples_peaks.bed".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
+    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf} && rm {outputDir}/ALLsamples_peaks.bed {outputDir}/merged_peaks_ALLsamples.bed".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
     
     peak_cmd = []
     for bamFile in BAM_FILES : 
@@ -572,9 +572,9 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
         wait_condition = configFileDict['PEAK_CALLING_WAIT'] + "," + configFileDict['EXT_BED_WAIT']
     
     if '8' not in configFileDict["task_list"] and '7' not in configFileDict["task_list"]:
-        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs)
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs)
     else:
-        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs, JID=wait_condition)
+        SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMDs, JID=wait_condition)
     #print(SLURM_CMD)
     if dryRun:
         print(SLURM_CMD)
