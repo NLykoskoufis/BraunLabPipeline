@@ -498,14 +498,14 @@ with Progress() as progress:
             if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": 
                 if '8' not in task_list:
                     if not args.peaks_dir: 
-                        vrb.error("You need to specify a bed directory")
+                        vrb.error("You need to specify a MACS2 peak directory")
                     else: 
                         configFileDict['peaks_dir'] = args.peaks_dir
-                if '7' not in task_list: 
-                    if not args.bed_dir: 
-                        vrb.error("You need to specify a bed directory")
+                if '4' not in task_list: 
+                    if not args.bam_dir: 
+                        vrb.error("You need to specify a bam directory")
                     else: 
-                        configFileDict['extended_bed_dir'] = args.bed_dir
+                        configFileDict['filtered_bam_dir'] = args.bam_dir
                         
                 if args.output_dir: 
                     print("You specified an output directory. The pipeline will therefore not create one.")
@@ -899,11 +899,12 @@ with Progress() as progress:
                     NARROWPEAK_FILES = ["{outputDir}/{samples}.MACS/{samples}_peaks.narrowPeak".format(outputDir = configFileDict['peaks_dir'], samples = i) for i in configFileDict['sample_prefix'] if i.split("_")[0] != "Input"]
             
             if '7' not in task_list:
-                EXTENDED_BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+                BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
             else:
-                EXTENDED_BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix'] if os.path.basename(i).split("_")[0] != "Input"]
+                BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                
             
-            PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,EXTENDED_BED_FILES, args.dryRun)
+            PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,BAM_FILES, args.dryRun)
             configFileDict['PEAK2COUNT_CALLING_WAIT'] = PEAK2COUNT_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak2Count_log_files',PEAK2COUNT_CALLING_WAIT)
             

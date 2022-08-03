@@ -294,7 +294,7 @@ def submitBAM2BW(configFileDict, BAM_FILES, dryRun=False):
         del BW_JID_LIST
         return BAM2BW_WAIT
 
-def submitMergingBW_byGroup(configFileDict, BW_FILES,dryRun=False):
+def submitMergingBW(configFileDict, BW_FILES,dryRun=False):
     """[Submits jobs for merging of bw files into groups]
 
     Args:
@@ -540,7 +540,7 @@ def submitPeak2Counts_DEPRECATED(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FI
         return PEAK_CALLING_WAIT
 
 
-def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun=False):
+def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     """[Submits jobs peak2Counts DEPRECATED]
         
     Args:
@@ -553,16 +553,16 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,EXTENDED_BED_FILES, dryRun
     
     OUTPUT_DIR = configFileDict['peakCounts_dir']
     GTF_FILE = f"{OUTPUT_DIR}/merged_peaks_ALLsamples.gtf"
-    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed > {gtf}".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], extendedBedFiles = " ".join(EXTENDED_BED_FILES), counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
+    PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf}".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
     
     peak_cmd = []
-    for bed in EXTENDED_BED_FILES: 
-        outputFile = OUTPUT_DIR + "/" + os.path.basename(bed).replace("extendedReads.bed", "count")
+    for bamFile in BAM_FILES : 
+        outputFile = OUTPUT_DIR + "/" + os.path.basename(bamFile).replace(".QualTrim_NoDup_NochrM_SortedByCoord.bam", ".counts.txt")
         #peak_cmd.append("{bedtools} intersect -a {outputDir}/merged_peaks_ALLsamples.bed -b {bed} -c > {outputFile}".format(bedtools = configFileDict['bedtools'], outputDir = OUTPUT_DIR, bed = bed, outputFile=outputFile))
-        peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bed))
+        peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
     
     
-    COMBINECOUNTS2BED_CMD = "python3 {combineQuanScript} --file-list {input_dir}/*.count --outputFile {input_dir}/AllSamples_chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
+    COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.count --outputFile {input_dir}/AllSamples_chrALL.bed".format(combineCounts = configFileDict['combineQuanScript'], input_dir = OUTPUT_DIR)
     
     CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd) + " && " + COMBINECOUNTS2BED_CMD
     
