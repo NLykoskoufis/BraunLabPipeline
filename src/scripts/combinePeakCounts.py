@@ -52,11 +52,16 @@ def combineCounts(fileList, outputbed):
         f = Utils.myopen(file)
         linecount = 0 
         for line in (line.rstrip().split("\t") for line in f):
-            if linecount % 100000 == 0: print(f"  * Read {linecount} lines")
-            linecount += 1
-            key = f"{line[0]};{line[1]};{line[2]}"
-            dico[key].append(line[3])
-    
+            if line[0].startswith("#"):
+                continue
+            elif line[0] == "Geneid": 
+                continue
+            else: 
+                if linecount % 100000 == 0: print(f"  * Read {linecount} lines")
+                linecount += 1
+                key = f"{line[1]};{line[2]};{line[3]}"
+                dico[key].append(line[6])
+        
     print("  * Combining all data into multisample bed file")
     with open(outputbed, "w") as g: 
         g.write("#chr\tstart\tend\tid\tinfo\tstrand\t" + "\t".join(dico['samples']) + "\n")
@@ -67,7 +72,7 @@ def combineCounts(fileList, outputbed):
             end = int(key.split(";")[2])
             strand = "+" # I add plus as regarding peaks strand does not matter. 
             id = key.replace(";","_")
-            info = f"L={end-start};T=ATACpeak;R={chrom}:{start}-{end}" 
+            info = f"L={end-start};T=peaks;R={chrom}:{start}-{end}" 
             g.write(chrom + "\t" + str(start - 1) + "\t" + str(end) + "\t" + id + "\t" + info + "\t" + strand + "\t" + "\t".join(dico[key]) + "\n")
 
 

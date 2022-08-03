@@ -562,7 +562,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
         peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
     
     
-    COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.count --outputFile {input_dir}/AllSamples_chrALL.bed".format(combineCounts = configFileDict['combineQuanScript'], input_dir = OUTPUT_DIR)
+    COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.counts.txt --outputFile {input_dir}/AllSamples.chrALL.bed && bgzip {input_dir}/AllSamples.chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
     
     CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd) + " && " + COMBINECOUNTS2BED_CMD
     
