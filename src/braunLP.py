@@ -139,10 +139,10 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1']
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','8','8.1']
 elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4','4.2','5','6','7','8','8.1'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.2','5','6','8','8.1'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list:
         if configFileDict['RNAkit'] == "Colibri":
