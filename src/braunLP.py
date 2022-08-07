@@ -126,6 +126,7 @@ configFileDict['combineCountScript'] = f"{scripts_path}/combinePeakCounts.py"
 configFileDict['combineQuanScript'] = f"{scripts_path}/featureCountsTObed.py"
 configFileDict['combineBamStatScript'] = f"{scripts_path}/createSamtoolsStatsTable.py"
 configFileDict['counts2GTF'] = f"{scripts_path}/counts2gtf.sh"
+configFileDict['signal_atac_script' f"{scripts_path}/signal_track_atac.py"
 # Python3 softwares. This assumes that the libraries were installed using pip3 install <software> --user 
 configFileDict['cutadapt'] = f"{str(Path.home())}/.local/bin/cutadapt"
 configFileDict['multiQC'] = f"{str(Path.home())}/.local/bin/multiqc"

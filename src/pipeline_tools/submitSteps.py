@@ -429,10 +429,15 @@ def submitPeakCalling(configFileDict,BAM_FILES, dryRun=False):
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=bam, output=OUTPUT_FILE, prefix=input_file)
         
+        SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = bam, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'])
+        
+        CMD = PEAKCALL_CMD + " && " + SIGNAL_TRACK_ATAC_CMD
+        
+        
         if '4' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMD, JID=configFileDict['FILTER_BAM_WAIT'])
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMD)
         
         if dryRun:
             print(SLURM_CMD)
@@ -470,11 +475,17 @@ def submitChIPseqPeakCalling(configFileDict,BAM_FILES, dryRun=False):
         OUTPUT_FILE = "{}/{}.MACS".format(OUTPUT_DIR, input_file)
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {sample} -c {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=inputs, sample = sample, output=OUTPUT_FILE, prefix=input_file)
+        
+        SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = file, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'])
+        
+        CMD = PEAKCALL_CMD + " && " + SIGNAL_TRACK_ATAC_CMD
+        
+        
         #print(PEAKCALL_CMD)
         if '4' in configFileDict['task_list']: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD, JID=configFileDict['FILTER_BAM_WAIT'])
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMD, JID=configFileDict['FILTER_BAM_WAIT'])
         else: 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = PEAKCALL_CMD)
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_general"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMD)
         
         if dryRun:
             print(SLURM_CMD)
