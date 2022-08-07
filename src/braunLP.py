@@ -126,7 +126,7 @@ configFileDict['combineCountScript'] = f"{scripts_path}/combinePeakCounts.py"
 configFileDict['combineQuanScript'] = f"{scripts_path}/featureCountsTObed.py"
 configFileDict['combineBamStatScript'] = f"{scripts_path}/createSamtoolsStatsTable.py"
 configFileDict['counts2GTF'] = f"{scripts_path}/counts2gtf.sh"
-configFileDict['signal_atac_script' f"{scripts_path}/signal_track_atac.py"
+configFileDict['signal_atac_script'] = f"{scripts_path}/signal_track_atac.py"
 # Python3 softwares. This assumes that the libraries were installed using pip3 install <software> --user 
 configFileDict['cutadapt'] = f"{str(Path.home())}/.local/bin/cutadapt"
 configFileDict['multiQC'] = f"{str(Path.home())}/.local/bin/multiqc"
@@ -140,7 +140,7 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','8','8.1']
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','8','8.1']
 elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
         task_list = ['1','1.1','2','3','4','4.2','5','6','8','8.1'] # TO BE CONFIRMED
@@ -850,7 +850,8 @@ with Progress() as progress:
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
-                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByName.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
@@ -866,7 +867,7 @@ with Progress() as progress:
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
-                    FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByName.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
                     SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
@@ -898,7 +899,7 @@ with Progress() as progress:
                 else: 
                     NARROWPEAK_FILES = ["{outputDir}/{samples}.MACS/{samples}_peaks.narrowPeak".format(outputDir = configFileDict['peaks_dir'], samples = i) for i in configFileDict['sample_prefix'] if i.split("_")[0] != "Input"]
             
-            if '7' not in task_list:
+            if '4' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
             else:
                 BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]

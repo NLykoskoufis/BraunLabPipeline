@@ -226,12 +226,14 @@ def submitFilteringBAM(configFileDict, BAM_FILES, dryRun=False):
     """
     BAM_FILTER_JID_LIST = []
     OUTPUT_DIR = configFileDict['filtered_bam_dir']
+    
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(OUTPUT_DIR, input_file)
         
         FILTER_CMD = "{samtools} view {arguments} -@ 4 {input} | grep -v 'chrM' | {samtools} view -b -o {output_file} -@ 4 && {samtools} index {output_file} -@ 4".format(samtools = configFileDict['samtools'], arguments=configFileDict['PCR_duplicates_removal'], input = bam, output_file = OUTPUT_FILE)
         
+    
         
         if '3' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_filter_bam"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = FILTER_CMD, JID=configFileDict['PCR_DUPLICATION_WAIT'])
@@ -423,6 +425,7 @@ def submitPeakCalling(configFileDict,BAM_FILES, dryRun=False):
     """
     PEAK_CALLING_JID_LIST = []
     OUTPUT_DIR = configFileDict['peaks_dir']
+    
     for bam in BAM_FILES:
         input_file = os.path.basename(bam).split(".")[0]
         OUTPUT_FILE = "{}/{}.MACS".format(OUTPUT_DIR, input_file)
@@ -432,7 +435,7 @@ def submitPeakCalling(configFileDict,BAM_FILES, dryRun=False):
         SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = bam, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'])
         
         CMD = PEAKCALL_CMD + " && " + SIGNAL_TRACK_ATAC_CMD
-        
+        print(CMD)
         
         if '4' in configFileDict['task_list']: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict["wsbatch"], slurm = configFileDict["slurm_peakCalling"], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict["uid"], cmd = CMD, JID=configFileDict['FILTER_BAM_WAIT'])
@@ -567,16 +570,17 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf} && rm {outputDir}/ALLsamples_peaks.bed {outputDir}/merged_peaks_ALLsamples.bed".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
     
     peak_cmd = []
+    
     for bamFile in BAM_FILES : 
         outputFile = OUTPUT_DIR + "/" + os.path.basename(bamFile).replace(".QualTrim_NoDup_NochrM_SortedByCoord.bam", ".counts.txt")
         #peak_cmd.append("{bedtools} intersect -a {outputDir}/merged_peaks_ALLsamples.bed -b {bed} -c > {outputFile}".format(bedtools = configFileDict['bedtools'], outputDir = OUTPUT_DIR, bed = bed, outputFile=outputFile))
         peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
     
     
+    
     COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.counts.txt --outputFile {input_dir}/AllSamples.chrALL.bed && bgzip {input_dir}/AllSamples.chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
     
     CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd) + " && " + COMBINECOUNTS2BED_CMD
-    
     wait_condition = ""
      
     if '8' in configFileDict["task_list"] and '7' in configFileDict["task_list"]: 
