@@ -38,7 +38,7 @@ def parse_arguments():
 
 
 def getTAGcount(bam,threads):
-    cmd = "samtools flagstat {} -@ {} | grep 'properly paired' | cut -d\" \" -f1".format(bam,threads)
+    cmd = "/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/samtools flagstat {} -@ {} | grep 'properly paired' | cut -d\" \" -f1".format(bam,threads)
     return float(subprocess.check_output(cmd,shell=True, universal_newlines= True, stderr=subprocess.STDOUT).rstrip()) / 1000000.0
 
 def macs2_signal_track(inputDirectory, samplePrefix, chromSizes, sval,outputDirectory,macs2Path, bedtoolsPath, bg2bwPath, bedClipPath):
