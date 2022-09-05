@@ -15,6 +15,7 @@ import json
 from rich.progress import Progress
 from pipeline_tools.submitSteps import submitMergingBW
 
+
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 utils_tools_path = os.path.abspath(pipeline_path+"/utils")
@@ -143,7 +144,7 @@ if configFileDict['technology'] == "ATACseq":
         task_list = ['1','1.1','2','3','4','4.1','4.2','5','8','8.1']
 elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4','4.2','5','6','8','8.1'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.2','5','8','8.1'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list:
         if configFileDict['RNAkit'] == "Colibri":
@@ -870,8 +871,11 @@ with Progress() as progress:
                     FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
+                    
                     SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
-                    BAM_FILES = [(i,j) for i,j in zip(SAMPLE_BAM,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
+                    
+                    BAM_FILES = [(i,j) for i,j in zip(SAMPLE_BAM,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
+                    
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             else:

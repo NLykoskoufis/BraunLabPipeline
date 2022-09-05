@@ -470,6 +470,7 @@ def submitChIPseqPeakCalling(configFileDict,BAM_FILES, dryRun=False):
     OUTPUT_DIR = configFileDict['peaks_dir']
     
     for file in BAM_FILES:
+        
         sample = file[0]
         inputs = file[1]
         
