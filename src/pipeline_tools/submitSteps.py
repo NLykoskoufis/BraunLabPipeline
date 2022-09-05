@@ -577,7 +577,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     
     
     
-    COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.counts.txt --outputFile {input_dir}/AllSamples.chrALL.bed && bgzip {input_dir}/AllSamples.chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
+    COMBINECOUNTS2BED_CMD = "python3 {combineCounts} --file-list {input_dir}/*.counts.txt --outputFile {input_dir}/AllSamples.chrALL.bed && /srv/beegfs/scratch/shares/brauns_lab/Tools/htslib-1.16/bgzip {input_dir}/AllSamples.chrALL.bed".format(combineCounts = configFileDict['combineCountScript'], input_dir = OUTPUT_DIR)
     
     CMDs = PEAK2COUNT_CMD + " && " + ";".join(peak_cmd) + " && " + COMBINECOUNTS2BED_CMD
     wait_condition = ""
