@@ -479,7 +479,7 @@ def submitChIPseqPeakCalling(configFileDict,BAM_FILES, dryRun=False):
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {sample} -c {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=inputs, sample = sample, output=OUTPUT_FILE, prefix=input_file)
         
-        SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = file, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'])
+        SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = sample, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'])
         
         CMD = PEAKCALL_CMD + " && " + SIGNAL_TRACK_ATAC_CMD
         
