@@ -14,6 +14,7 @@ def parse_arguments():
                                      description='')
     parser.add_argument('--bam', type=str, dest = "bam",
                         help='Path to BAM file for TAG counting')
+    parser.add_argument('-p',"--paired-end", type=int, dest="pairedEnd", help="Whether bam file is paired end or not", default=0)
     parser.add_argument('--prefix', type=str, dest = "prefix",
                         help="Prefix name")
     parser.add_argument('--input-path', type=str, dest = "inputDir",
@@ -37,12 +38,18 @@ def parse_arguments():
     return args
 
 
-def getTAGcount(bam,threads):
-    cmd = "/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/samtools flagstat {} -@ {} | grep 'properly paired' | cut -d\" \" -f1".format(bam,threads)
-    return float(subprocess.check_output(cmd,shell=True, universal_newlines= True, stderr=subprocess.STDOUT).rstrip()) / 1000000.0
+def getTAGcount(bam,pairedEnd, threads):
+    if pairedEnd:
+        cmd = "/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/samtools flagstat {} -@ {} | grep 'properly paired' | cut -d\" \" -f1".format(bam,threads)
+        return float(subprocess.check_output(cmd,shell=True, universal_newlines= True, stderr=subprocess.STDOUT).rstrip()) / 1000000.0
+    else: 
+        cmd = "/srv/beegfs/scratch/shares/brauns_lab/Tools/samtools-1.12/samtools flagstat {} -@ {} | grep 'mapped' | cut -d\" \" -f1".format(bam,threads)
+        return float(subprocess.check_output(cmd,shell=True, universal_newlines= True, stderr=subprocess.STDOUT).rstrip().split("\n")[0]) / 1000000.0
+        
 
 def macs2_signal_track(inputDirectory, samplePrefix, chromSizes, sval,outputDirectory,macs2Path, bedtoolsPath, bg2bwPath, bedClipPath):
     # Define output file names 
+    
     pval_bigwig = "{}/{}.pval.signal.bigwig".format(outputDirectory, samplePrefix)
     pval_bedgraph = "{}/{}.pval.signal.bedgraph".format(outputDirectory, samplePrefix)
     pval_bedgraph_srt = "{}/{}.pval.signal.srt.bedgraph".format(outputDirectory, samplePrefix)
@@ -82,10 +89,12 @@ def macs2_signal_track(inputDirectory, samplePrefix, chromSizes, sval,outputDire
 def main(): 
     # read parameters 
     args = parse_arguments()
-    
+    print(args.pairedEnd)
+    pairedEndMode = True if args.pairedEnd == 1 else False
+    print(pairedEndMode)
     # get Sval 
     print("running getTAGcount")
-    sval = getTAGcount(args.bam, args.threads)
+    sval = getTAGcount(args.bam, pairedEndMode, args.threads)
     #sval = 0.0
     print(f"sval={str(sval)}")
     # generate bigwig file 
