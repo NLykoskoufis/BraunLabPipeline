@@ -479,7 +479,7 @@ def submitChIPseqPeakCalling(configFileDict,BAM_FILES, dryRun=False):
         
         PEAKCALL_CMD = "{macs2} callpeak {arguments} -t {sample} -c {input} -n {prefix} --outdir {output}".format(macs2=configFileDict['macs2'], arguments=configFileDict['peak_calling'], input=inputs, sample = sample, output=OUTPUT_FILE, prefix=input_file)
                 
-        SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --paired-end {paired} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = sample, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'], paired = configFileDict['paired'])
+        SIGNAL_TRACK_ATAC_CMD = "{pythonPath} {bin} --bam {bamFile} --paired-end {paired} --prefix {prefix} --input-path {inputDir} --chrsz {chromSizes} --out-dir {outputDir} --threads {threads} -macs2 {macs2Path} -bg2bw {bg2bwPath} -bedt {bedtoolsPath} --bedClip {bedClipPath}".format(pythonPath = configFileDict['python'], bin = configFileDict['signal_atac_script'], bamFile = sample, prefix = input_file, inputDir = OUTPUT_FILE, chromSizes = configFileDict['genomeFileSize'], outputDir = OUTPUT_FILE, threads = 4, macs2Path = configFileDict['macs2'], bg2bwPath = configFileDict['bedGraphToBigWig'], bedtoolsPath = configFileDict['bedtools'], bedClipPath = configFileDict['bedClip'], paired = configFileDict['pairend'])
         
         CMD = PEAKCALL_CMD + " && " + SIGNAL_TRACK_ATAC_CMD
         
@@ -573,8 +573,12 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     
     for bamFile in BAM_FILES : 
         outputFile = OUTPUT_DIR + "/" + os.path.basename(bamFile).replace(".QualTrim_NoDup_NochrM_SortedByCoord.bam", ".counts.txt")
-        #peak_cmd.append("{bedtools} intersect -a {outputDir}/merged_peaks_ALLsamples.bed -b {bed} -c > {outputFile}".format(bedtools = configFileDict['bedtools'], outputDir = OUTPUT_DIR, bed = bed, outputFile=outputFile))
-        peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
+        
+        if configFileDict['pairend'] == 1: 
+            peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
+        else:
+            peak_cmd.append("{featurecounts} -T 4 -O -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
+            
     
     
     
