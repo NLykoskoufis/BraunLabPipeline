@@ -858,8 +858,8 @@ def submitFeatureCountsGeneQuantification(configFileDict, BAM_FILES, dryRun=Fals
         
         QUAN_CMD = "{bin} {quantOptions} -a {GTF} -o {outputFile}.raw.gene.count.txt {bamFile}".format(bin = configFileDict['featureCounts'], GTF = configFileDict['annotation'], outputFile = outputFile, bamFile = bam, quantOptions = configFileDict['quantOptions'])
         
-        if '3' in configFileDict['task_list'] : 
-            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['PCR_DUPLICATION_WAIT'], cmd = QUAN_CMD)
+        if '2' in configFileDict['task_list'] : 
+            SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --dependency=afterany:{JID} --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'],JID = configFileDict['MAP_WAIT'], cmd = QUAN_CMD)
         else: 
             SLURM_CMD = "{wsbatch} {slurm} -o {log_dir}/{uid}_slurm-%j.out --wrap=\"{cmd}\"".format(wsbatch = configFileDict['wsbatch'], slurm = configFileDict['slurm_general'], log_dir = "{}/log".format(OUTPUT_DIR), uid = configFileDict['uid'], cmd = QUAN_CMD)
         
