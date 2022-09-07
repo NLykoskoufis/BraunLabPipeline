@@ -782,12 +782,10 @@ with Progress() as progress:
                     configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
                     
                 else: # if not ATAC or ChIP then RNA ==> Do not merge bigwigs for RNA per group.
-                    BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    BAM_FILES = ["{}/{}.Aligned.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
-                    #BW_FILES = ["{}/{}.bw".format(configFileDict['bw_dir'], i) for i in configFileDict['sample_prefix']]
-                    #MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
-                    #configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
+                    
             
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
             task_dico['5'] = "BAM2BW_WAIT"
@@ -925,13 +923,13 @@ with Progress() as progress:
             vrb.boldBullet("Submitting exon/gene quantification\n")
             progress.update(task1, advance=1)
             configFileDict['quant_log_files'] = []
-            if '3' not in task_list:
+            if '2' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
                 QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['QUANT_WAIT'] = QUANT_WAIT
                 
             else:
-                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']] if configFileDict['RNAkit'] != "Colibri" else ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']] if configFileDict['RNAkit'] != "Colibri" else ["{}/{}.Aligned.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 if configFileDict['quantificationSoftware'] == "QTLtools":
                     QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 elif configFileDict['quantificationSoftware'] == "featureCounts":
