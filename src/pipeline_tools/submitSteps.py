@@ -571,7 +571,7 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     
     peak_cmd = []
     if configFileDict['technology'] == "ChIPseq":
-        BAM_FILES = [os.path.basename(i) for i in BAM_FILES if os.path.basename(i).split("_")[0] != "Input"]
+        BAM_FILES = [i for i in BAM_FILES if os.path.basename(i).split("_")[0] != "Input"]
     
     
     for bamFile in BAM_FILES : 
