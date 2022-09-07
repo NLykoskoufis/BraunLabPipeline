@@ -570,6 +570,9 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     PEAK2COUNT_CMD = "cat {files} | sort -k1,1 -k2,2n > {outputDir}/ALLsamples_peaks.bed && {bedtools} merge -i {outputDir}/ALLsamples_peaks.bed -d 1000 > {outputDir}/merged_peaks_ALLsamples.bed && source {counts2GTF} {outputDir}/merged_peaks_ALLsamples.bed {gtf} && rm {outputDir}/ALLsamples_peaks.bed {outputDir}/merged_peaks_ALLsamples.bed".format(files = " ".join(NARROWPEAK_FILES), outputDir = OUTPUT_DIR, bedtools = configFileDict['bedtools'], counts2GTF = configFileDict['counts2GTF'], gtf = GTF_FILE)
     
     peak_cmd = []
+    if configFileDict['technology'] == "ChIPseq":
+        BAM_FILES = [os.path.basename(i) for i in BAM_FILES if os.path.basename(i).split("_")[0] != "Input"]
+    
     
     for bamFile in BAM_FILES : 
         outputFile = OUTPUT_DIR + "/" + os.path.basename(bamFile).replace(".QualTrim_NoDup_NochrM_SortedByCoord.bam", ".counts.txt")
