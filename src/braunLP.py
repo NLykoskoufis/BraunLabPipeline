@@ -15,6 +15,7 @@ import json
 from rich.progress import Progress
 from pipeline_tools.submitSteps import submitMergingBW
 
+
 pipeline_path = sys.path[0]
 pipeline_tools_path = os.path.abspath(pipeline_path + "/pipeline_tools")
 utils_tools_path = os.path.abspath(pipeline_path+"/utils")
@@ -125,7 +126,8 @@ configFileDict['zipDirectoryScript'] = f"{pipeline_tools_path}/zipDirectory.py"
 configFileDict['combineCountScript'] = f"{scripts_path}/combinePeakCounts.py"
 configFileDict['combineQuanScript'] = f"{scripts_path}/featureCountsTObed.py"
 configFileDict['combineBamStatScript'] = f"{scripts_path}/createSamtoolsStatsTable.py"
-
+configFileDict['counts2GTF'] = f"{scripts_path}/counts2gtf.sh"
+configFileDict['signal_atac_script'] = f"{scripts_path}/signal_track_atac.py"
 # Python3 softwares. This assumes that the libraries were installed using pip3 install <software> --user 
 configFileDict['cutadapt'] = f"{str(Path.home())}/.local/bin/cutadapt"
 configFileDict['multiQC'] = f"{str(Path.home())}/.local/bin/multiqc"
@@ -139,10 +141,10 @@ if not args.task:
 task_list = args.task
 if configFileDict['technology'] == "ATACseq":
     if 'all' in task_list:
-        task_list = ['1','1.1','2','3','4','4.1','4.2','5','6','7','8','8.1']
+        task_list = ['1','1.1','2','3','4','4.1','4.2','5','8','8.1']
 elif configFileDict['technology'] == "ChIPseq":
     if 'all' in task_list: 
-        task_list = ['1','1.1','2','3','4','4.2','5','6','7','8','8.1'] # TO BE CONFIRMED
+        task_list = ['1','1.1','2','3','4','4.2','5','8','8.1'] # TO BE CONFIRMED
 elif configFileDict['technology'] == "RNAseq":
     if 'all' in task_list:
         if configFileDict['RNAkit'] == "Colibri":
@@ -473,11 +475,11 @@ with Progress() as progress:
         if '8' in task_list:
             progress.update(task1, advance=1)
             if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": 
-                if '7' not in task_list: 
-                    if not args.bed_dir: 
-                        vrb.error("You need to specify a bed directory")
+                if '4' not in task_list: 
+                    if not args.bam_dir: 
+                        vrb.error("You need to specify a bam directory")
                     else: 
-                        configFileDict['extended_bed_dir'] = args.bed_dir
+                        configFileDict['filtered_bam_dir'] = args.bam_dir
                 if args.output_dir: 
                     print("You specified an output directory. The pipeline will therefore not create one.")
                     configFileDict['peaks_dir'] = f"{args.output_dir}/peaks"
@@ -498,14 +500,14 @@ with Progress() as progress:
             if configFileDict['technology'] == "ATACseq" or configFileDict['technology'] == "ChIPseq": 
                 if '8' not in task_list:
                     if not args.peaks_dir: 
-                        vrb.error("You need to specify a bed directory")
+                        vrb.error("You need to specify a MACS2 peak directory")
                     else: 
                         configFileDict['peaks_dir'] = args.peaks_dir
-                if '7' not in task_list: 
-                    if not args.bed_dir: 
-                        vrb.error("You need to specify a bed directory")
+                if '4' not in task_list: 
+                    if not args.bam_dir: 
+                        vrb.error("You need to specify a bam directory")
                     else: 
-                        configFileDict['extended_bed_dir'] = args.bed_dir
+                        configFileDict['filtered_bam_dir'] = args.bam_dir
                         
                 if args.output_dir: 
                     print("You specified an output directory. The pipeline will therefore not create one.")
@@ -779,13 +781,11 @@ with Progress() as progress:
                     MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
                     configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
                     
-                else:
-                    BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                else: # if not ATAC or ChIP then RNA ==> Do not merge bigwigs for RNA per group.
+                    BAM_FILES = ["{}/{}.Aligned.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                     BAM2BW_WAIT = submitBAM2BW(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['BAM2BW_WAIT'] = BAM2BW_WAIT
-                    BW_FILES = ["{}/{}.bw".format(configFileDict['bw_dir'], i) for i in configFileDict['sample_prefix']]
-                    MERGEBW_WAIT = submitMergingBW(configFileDict, BW_FILES,args.dryRun)
-                    configFileDict['BAM2BW_WAIT'] += "," + MERGEBW_WAIT
+                    
             
             #submitJobCheck(configFileDict,'bw_log_files',BAM2BW_WAIT)
             task_dico['5'] = "BAM2BW_WAIT"
@@ -844,36 +844,52 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             configFileDict['peak_log_files'] = []
             if configFileDict['technology'] == "ATACseq":
-                if '7' not in task_list: 
-                    BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
-                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES, args.dryRun)
+                if '4' not in task_list: 
+                    BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
+                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
-                    BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
-                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BED_FILES, args.dryRun)
+                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    
+                    PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
             elif configFileDict['technology'] == "ChIPseq":
-                if '7' not in task_list: 
-                    FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+                if '4' not in task_list: 
+                    FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
+<<<<<<< HEAD
+                    SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
+                    BAM_FILES = [(i,j) for i,j in zip(SAMPLE_BAM,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
+                    if len(BAM_FILES) != len(SAMPLE_BAM):
+=======
                     SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
                     BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     if len(BED_FILES) != len(SAMPLE_BED):
+>>>>>>> origin/main
                         vrb.error("Samples and Inputs files do not match!")
                         
-                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES, args.dryRun)
+                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
-                    FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix']]
+                    FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
+<<<<<<< HEAD
+                    
+                    SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
+                    
+                    BAM_FILES = [(i,j) for i,j in zip(SAMPLE_BAM,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
+                    
+                    PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
+=======
                     #print(INPUTS)
                     SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
                     #print(SAMPLE_BED)
                     BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     #print(BED_FILES)
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES, args.dryRun)
+>>>>>>> origin/main
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             else:
                 vrb.error("You are trying to run peak calling with data that is neither ATAC-seq nor ChIP-seq. Did you forget to change the technology?")
@@ -900,12 +916,13 @@ with Progress() as progress:
                 else: 
                     NARROWPEAK_FILES = ["{outputDir}/{samples}.MACS/{samples}_peaks.narrowPeak".format(outputDir = configFileDict['peaks_dir'], samples = i) for i in configFileDict['sample_prefix'] if i.split("_")[0] != "Input"]
             
-            if '7' not in task_list:
-                EXTENDED_BED_FILES = glob.glob("{}/*.bed".format(configFileDict['extended_bed_dir']))
+            if '4' not in task_list:
+                BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
             else:
-                EXTENDED_BED_FILES = ["{}/{}.extendedReads.bed".format(configFileDict['extended_bed_dir'], i) for i in configFileDict['sample_prefix'] if os.path.basename(i).split("_")[0] != "Input"]
+                BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                
             
-            PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,EXTENDED_BED_FILES, args.dryRun)
+            PEAK2COUNT_CALLING_WAIT = submitPeak2Counts(configFileDict, NARROWPEAK_FILES,BAM_FILES, args.dryRun)
             configFileDict['PEAK2COUNT_CALLING_WAIT'] = PEAK2COUNT_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak2Count_log_files',PEAK2COUNT_CALLING_WAIT)
             
@@ -921,13 +938,13 @@ with Progress() as progress:
             vrb.boldBullet("Submitting exon/gene quantification\n")
             progress.update(task1, advance=1)
             configFileDict['quant_log_files'] = []
-            if '3' not in task_list:
+            if '2' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['bam_dir']))
                 QUANT_WAIT = submitExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 configFileDict['QUANT_WAIT'] = QUANT_WAIT
                 
             else:
-                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']] if configFileDict['RNAkit'] != "Colibri" else ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['marked_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                BAM_FILES = ["{}/{}.sortedByCoord.Picard.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']] if configFileDict['RNAkit'] != "Colibri" else ["{}/{}.Aligned.sortedByCoord.bam".format(configFileDict['bam_dir'], i) for i in configFileDict['sample_prefix']]
                 if configFileDict['quantificationSoftware'] == "QTLtools":
                     QUANT_WAIT = submitQTLtoolsExonQuantification(configFileDict, BAM_FILES, args.dryRun)
                 elif configFileDict['quantificationSoftware'] == "featureCounts":
