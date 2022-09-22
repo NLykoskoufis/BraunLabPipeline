@@ -577,11 +577,11 @@ def submitPeak2Counts(configFileDict,NARROWPEAK_FILES,BAM_FILES, dryRun=False):
     for bamFile in BAM_FILES : 
         outputFile = OUTPUT_DIR + "/" + os.path.basename(bamFile).replace(".QualTrim_NoDup_NochrM_SortedByCoord.bam", ".counts.txt")
         
-        if configFileDict['pairend'] == 1: 
-            peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
-        else:
-            peak_cmd.append("{featurecounts} -T 4 -O -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
-            
+        #if configFileDict['pairend'] == 1: 
+        #    peak_cmd.append("{featurecounts} -T 4 -O -p -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
+        #else:
+        #    peak_cmd.append("{featurecounts} -T 4 -O -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
+        peak_cmd.append("{featurecounts} {quantOptions} -a {peakGTF} -o {outputFile} {inputFile} -t exon -g gene_id".format(featurecounts = configFileDict['featureCounts'], quantOptions = configFileDict['quantOptions'] peakGTF = GTF_FILE, outputFile = outputFile, inputFile = bamFile))
     
     
     
