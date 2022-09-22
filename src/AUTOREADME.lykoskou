@@ -88,3 +88,11 @@ chmod 755 braunLP.py
 1440 python3 
 #[2022-02-18 10:29:17 AM]
 1441 python3 /srv/beegfs/scratch/shares/brauns_lab/data/nikos/BraunLabPipeline/src/pipeline_tools/groupCheck.py
+#[2022-09-21 03:49:06 PM]
+cd src
+#[2022-09-21 03:49:07 PM]
+ls
+#[2022-09-21 03:50:58 PM]
+nvim braunLP.py
+#[2022-09-21 03:51:00 PM]
+cd pipi

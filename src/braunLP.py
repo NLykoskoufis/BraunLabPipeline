@@ -858,15 +858,12 @@ with Progress() as progress:
                 if '4' not in task_list: 
                     FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
-<<<<<<< HEAD
                     SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
                     BAM_FILES = [(i,j) for i,j in zip(SAMPLE_BAM,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].split("_")[1]]
                     if len(BAM_FILES) != len(SAMPLE_BAM):
-=======
-                    SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
-                    BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
+                        SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
+                        BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     if len(BED_FILES) != len(SAMPLE_BED):
->>>>>>> origin/main
                         vrb.error("Samples and Inputs files do not match!")
                         
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
@@ -875,21 +872,18 @@ with Progress() as progress:
                     FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
-<<<<<<< HEAD
                     
                     SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
                     
                     BAM_FILES = [(i,j) for i,j in zip(SAMPLE_BAM,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
-=======
                     #print(INPUTS)
                     SAMPLE_BED = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
                     #print(SAMPLE_BED)
                     BED_FILES = [(i,j) for i,j in zip(SAMPLE_BED,INPUTS) if os.path.basename(i).split(".")[0] == os.path.basename(j).split(".")[0].replace("Input_","")]
                     #print(BED_FILES)
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BED_FILES, args.dryRun)
->>>>>>> origin/main
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             else:
                 vrb.error("You are trying to run peak calling with data that is neither ATAC-seq nor ChIP-seq. Did you forget to change the technology?")
