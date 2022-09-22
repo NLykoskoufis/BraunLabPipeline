@@ -848,8 +848,11 @@ with Progress() as progress:
                     BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
-                else: 
-                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                else:   
+                    BAM_FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
+                    print(BAM_FILES)
+                    #BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    
                     
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
@@ -869,7 +872,8 @@ with Progress() as progress:
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
-                    FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    #FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
                     
