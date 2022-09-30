@@ -844,21 +844,20 @@ with Progress() as progress:
             progress.update(task1, advance=1)
             configFileDict['peak_log_files'] = []
             if configFileDict['technology'] == "ATACseq":
-                if '4' not in task_list: 
+                if '4' not in task_list or '1' not in task_list: 
                     BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else:   
-                    BAM_FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
+                    #BAM_FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
+                    BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
                     print(BAM_FILES)
-                    #BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                    
                     
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
             #submitJobCheck(configFileDict,'peak_log_files',PEAK_CALLING_WAIT)
             elif configFileDict['technology'] == "ChIPseq":
-                if '4' not in task_list: 
+                if '4' not in task_list or '1' not in task_list: 
                     FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
                     SAMPLE_BAM = sorted([i for i in FILES if os.path.basename(i).split("_")[0] != "Input"])
@@ -872,8 +871,8 @@ with Progress() as progress:
                     PEAK_CALLING_WAIT = submitChIPseqPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
                 else: 
-                    #FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
-                    FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
+                    FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
+                    #FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
                     #print(FILES)
                     INPUTS= sorted([i for i in FILES if os.path.basename(i).split("_")[0] == "Input"])
                     
@@ -906,7 +905,7 @@ with Progress() as progress:
             vrb.boldBullet("Submitting peak 2 Counts\n")
             progress.update(task1, advance=1)
             configFileDict['peak2Count_log_files'] = []
-            if '8' not in task_list : 
+            if '8' not in task_list or '1' not in task_list: 
                 NARROWPEAK_FILES = glob.glob("{}/*.MACS/*.narrowPeak".format(configFileDict['peaks_dir']))
             else:
                 if configFileDict['technology'] == "ATACseq": 
@@ -914,7 +913,7 @@ with Progress() as progress:
                 else: 
                     NARROWPEAK_FILES = ["{outputDir}/{samples}.MACS/{samples}_peaks.narrowPeak".format(outputDir = configFileDict['peaks_dir'], samples = i) for i in configFileDict['sample_prefix'] if i.split("_")[0] != "Input"]
             
-            if '4' not in task_list:
+            if '4' not in task_list or '1' not in task_list:
                 BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
             else:
                 BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
