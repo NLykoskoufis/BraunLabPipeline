@@ -846,8 +846,10 @@ with Progress() as progress:
             if configFileDict['technology'] == "ATACseq":
                 if '4' not in task_list or '1' not in task_list: 
                     BAM_FILES = glob.glob("{}/*.bam".format(configFileDict['filtered_bam_dir']))
+                    print(BAM_FILES)
                     PEAK_CALLING_WAIT = submitPeakCalling(configFileDict, BAM_FILES, args.dryRun)
                     configFileDict['PEAK_CALLING_WAIT'] = PEAK_CALLING_WAIT
+                    
                 else:   
                     #BAM_FILES = glob.glob("{}/*.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir']))
                     BAM_FILES = ["{}/{}.QualTrim_NoDup_NochrM_SortedByCoord.bam".format(configFileDict['filtered_bam_dir'], i) for i in configFileDict['sample_prefix']]
